@@ -1,0 +1,51 @@
+{
+  "origin": "Gemini response supplied by user on 2026-10-19",
+  "mode": "presentation-only extracted source, unmodified except formatting section separation",
+  "files": [
+    {
+      "path": "apps/guard/src/components.tsx",
+      "lines": 1054,
+      "sha256": "102a87adfc3324845a321b29f2e58417b2d57fd763891ce656d7ce36170e0a1a"
+    },
+    {
+      "path": "apps/guard/src/screens/LoginScreen.tsx",
+      "lines": 201,
+      "sha256": "dc20e44f748a2ad9e3e475e21d1c17f76803b2657dbee9873e7954e2b39bbd6c"
+    },
+    {
+      "path": "apps/guard/src/screens/TodaysDutyScreen.tsx",
+      "lines": 476,
+      "sha256": "bf472dbc22fabdf1f348314118e883dce87f45f5a996163bb459ba4c43d1578a"
+    },
+    {
+      "path": "apps/guard/src/ReportIncidentScreen.tsx",
+      "lines": 339,
+      "sha256": "e2ecbf62ae3164c65f6d9ae6db2d92e882394cd5b39657162feb322d30426a0f"
+    },
+    {
+      "path": "apps/guard/src/screens/SubmissionStatusScreen.tsx",
+      "lines": 242,
+      "sha256": "cd6eba449bbfef1c7b6f2d7eb71aeec646f37310767841fc934257e759ac2f7e"
+    },
+    {
+      "path": "apps/guard/src/screens/SyncQueueScreen.tsx",
+      "lines": 289,
+      "sha256": "d8b873f02bbf6f6dea3f4229d222c110c69920e8fddb110200d456e60aaf4b4c"
+    },
+    {
+      "path": "apps/guard/src/screens/IncidentHistoryScreen.tsx",
+      "lines": 311,
+      "sha256": "0749a1945d5669f515e0c4ca0a0cf144682630635805f250662c36049595527d"
+    },
+    {
+      "path": "apps/guard/src/screens/IncidentDetailsScreen.tsx",
+      "lines": 349,
+      "sha256": "09acc15c491a4258c6639c480968b2632fcd54faafd5576bd97d394353df431d"
+    },
+    {
+      "path": "apps/guard/src/screens/index.ts",
+      "lines": 7,
+      "sha256": "332dedc4ecf43083bd7ee5baaf9fcf507f63f5ef242024fd7ef493393dee8872"
+    }
+  ]
+}
