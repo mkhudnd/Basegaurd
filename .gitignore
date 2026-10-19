@@ -1,6 +1,7 @@
 node_modules/
 .pnpm-store/
 .expo/
+apps/guard/android/
 dist/
 build/
 .env

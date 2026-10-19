@@ -88,19 +88,25 @@ export async function unsentCount(guardId: string) {
 }
 const inFlightSync = new Map<string, Promise<{sent:number;failed:number}>>();
 const syncObservers = new Map<string, Set<()=>Promise<void> | void>>();
-export async function syncRecords(guardId:string,onStateChange?:()=>Promise<void> | void):Promise<{sent:number;failed:number}> {
+export async function syncRecords(guardId:string,onStateChange?:()=>Promise<void> | void,recordId?:string):Promise<{sent:number;failed:number}> {
  if(onStateChange){const listeners=syncObservers.get(guardId)??new Set();listeners.add(onStateChange);syncObservers.set(guardId,listeners);}
  const existing = inFlightSync.get(guardId);
  if (existing) {try{return await existing;}finally{if(onStateChange)syncObservers.get(guardId)?.delete(onStateChange);}}
- const running = runSync(guardId);
+ const running = runSync(guardId,recordId);
  inFlightSync.set(guardId, running);
  try { return await running; } finally { inFlightSync.delete(guardId);syncObservers.delete(guardId); }
 }
-async function runSync(guardId:string):Promise<{sent:number;failed:number}> {
+export async function syncRecord(guardId:string,recordId:string,onStateChange?:()=>Promise<void>|void){
+ return syncRecords(guardId,onStateChange,recordId);
+}
+async function runSync(guardId:string,recordId?:string):Promise<{sent:number;failed:number}> {
  const d=await db();
  return syncPending(guardId,{
-  pending:async id=>d.getAllAsync<LocalRecord>(`SELECT * FROM local_records
-   WHERE author_id=? AND state IN ('queued','sending','failed') ORDER BY created_at LIMIT 50`,id),
+  pending:async id=>recordId
+   ? d.getAllAsync<LocalRecord>(`SELECT * FROM local_records WHERE author_id=? AND id=?
+      AND state IN ('queued','sending','failed') LIMIT 1`,id,recordId)
+   : d.getAllAsync<LocalRecord>(`SELECT * FROM local_records
+      WHERE author_id=? AND state IN ('queued','sending','failed') ORDER BY created_at LIMIT 50`,id),
   markSending:async id=>{await d.runAsync(`UPDATE local_records SET state='sending',error=NULL WHERE id=?`,id);},
   submit:async(kind,args)=>{const method=kind==='occurrence'?'submit_ob_entry':'submit_incident';
    const {data,error}=await supabase.rpc(method,args);if(error)throw error;return data;},

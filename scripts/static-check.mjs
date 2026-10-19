@@ -18,5 +18,6 @@ assert.match(sql,/Not authorized for this site/,'Guard authorization missing');
 assert.match(sql,/set search_path = ''/,'Secured function search path missing');
 assert.match(read('apps/guard/app.json'),/useSQLCipher/,'SQLCipher native config missing');
 assert.match(read('apps/guard/src/offline.ts'),/state='received'/,'Received-state sync handling missing');
-assert.match(read('apps/guard/src/ReportIncidentScreen.tsx'),/approved emergency telephone\/radio procedures/,'Urgent escalation reminder missing');
+assert.match(read('apps/guard/src/ReportIncidentScreen.tsx'),/EmergencyEscalationBanner/,'Incident form warning component missing');
+assert.match(read('apps/guard/src/components.tsx'),/Use approved emergency telephone\/radio procedures/,'Urgent escalation reminder missing');
 console.log(`PASS: ${expected.length} RLS tables, 3 restricted RPCs, local outbox & emergency warning (static checks only).`);

@@ -7,9 +7,10 @@
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
-    "test": "node --test src/incident-domain.test.mjs"
+    "test": "node --test src/incident-domain.test.mjs src/presentation-adapter.test.mjs"
   },
   "dependencies": {
+    "@react-native-community/netinfo": "11.4.1",
     "@supabase/supabase-js": "2.75.0",
     "expo": "~54.0.0",
     "expo-crypto": "~15.0.7",

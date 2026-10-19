@@ -1,33 +1,10 @@
-import type {Duty, LocalRecord} from './offline';
-import type {IncidentDraft} from './incident-domain';
-
-export type GuardTab='Today'|'OB'|'Incidents'|'Handover';
-export type GuardPage='tabs'|'incidentForm'|'submission'|'queue'|'details';
+/** Public presentation contracts after the Gemini UI integration. */
+export type {GuardTabKey as GuardTab,DeliveryStatus} from './components';
+export type {LoginScreenProps} from './screens/LoginScreen';
+export type {TodaysDutyScreenProps,VerifiedShiftContext,ActivitySummaryItem} from './screens/TodaysDutyScreen';
+export type {ReportIncidentScreenProps,IncidentFormSubmitPayload} from './ReportIncidentScreen';
+export type {SubmissionStatusScreenProps,SubmissionRecordSummary} from './screens/SubmissionStatusScreen';
+export type {SyncQueueScreenProps,SyncQueueItem} from './screens/SyncQueueScreen';
+export type {IncidentHistoryScreenProps,IncidentListItem} from './screens/IncidentHistoryScreen';
+export type {IncidentDetailsScreenProps,IncidentDetailRecord} from './screens/IncidentDetailsScreen';
 export type LoadState='loading'|'ready'|'error';
-
-export type ReportIncidentScreenProps={
- duty:Duty|null;
- draft:IncidentDraft;
- eventText:string;
- validationError:string|null;
- saving:boolean;
- onDraftChange:(draft:IncidentDraft)=>void;
- onEventTextChange:(value:string)=>void;
- onSave:()=>void;
- onCancel:()=>void;
-};
-
-export type SubmissionStatusScreenProps={
- record:LocalRecord|null;
- onOpenQueue:()=>void;
- onOpenHistory:()=>void;
- onToday:()=>void;
-};
-
-export type SyncQueueScreenProps={
- records:LocalRecord[];
- syncing:boolean;
- error:string|null;
- onRetry:()=>void;
- onOpenRecord:(id:string)=>void;
-};
