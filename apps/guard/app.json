@@ -1,0 +1,12 @@
+{
+ "expo": {
+  "name":"Baseguard SmartOps",
+  "slug":"baseguard-smartops-guard",
+  "scheme":"baseguard-smartops",
+  "version":"0.1.0",
+  "orientation":"portrait",
+  "userInterfaceStyle":"light",
+  "android":{"package":"zw.baseguard.smartops.guard", "versionCode":1, "permissions":[], "softwareKeyboardLayoutMode":"resize"},
+  "plugins":[["expo-sqlite",{"useSQLCipher":true}],"expo-secure-store"]
+ }
+}
