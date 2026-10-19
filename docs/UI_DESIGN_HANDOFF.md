@@ -1,5 +1,7 @@
 # Gemini visual UI handoff
 
+**Integration update:** Gemini's nine staged source files have been adopted into the guard app on the integration branch. See [GEMINI_INTEGRATION_REPORT.md](GEMINI_INTEGRATION_REPORT.md) for the exact component mapping, necessary visual deviations and verification results. The guidance below describes the original pre-integration handoff.
+
 ## Assignment
 
 Implement the visual layer for the **currently functioning** guard incident journey and existing supervisor views. Keep the functional labels and incomplete features in `SCREEN_CONTRACTS.md`. Google Stitch exports and `prototype/` show visual/navigation intent; they are simulated and may contain unsupported claims, sample identities, external assets and scripts. Translate visuals into React Native primitives for Android and React for web. Do not paste Stitch HTML/JS into either app.

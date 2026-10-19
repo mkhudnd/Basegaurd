@@ -1,5 +1,7 @@
 # Screen contracts for presentation work
 
+**Integration update:** The seven Gemini view prop interfaces in `apps/guard/src/ReportIncidentScreen.tsx` and `apps/guard/src/screens/` are the current compiled presentation contracts. `apps/guard/src/screen-contracts.ts` re-exports them; `apps/guard/src/presentation-adapter.ts` maps local and server rows. The table below records the earlier handoff baseline. Current service wiring and the limited server history/follow-up read are described in [GEMINI_INTEGRATION_REPORT.md](GEMINI_INTEGRATION_REPORT.md).
+
 These are the present runtime contracts. Route names are logical IDs from `NAVIGATION_MAP.md`. All data is scoped to the signed-in user by Supabase/RLS or by `author_id` in encrypted local SQLite. UI code receives state and callbacks; it must never call Supabase RPCs or manipulate the SQLite outbox directly.
 
 ## Shared types and state rules

@@ -1,5 +1,7 @@
 # Functional audit — 19 October 2026
 
+**Integration update:** This is the pre-Gemini audit snapshot. The guard now also reads permitted server incident history and supervisor updates for incident details. See [GEMINI_INTEGRATION_REPORT.md](GEMINI_INTEGRATION_REPORT.md) for the current integration state and verification limits.
+
 This is a source audit of a proposed industrial-attachment pilot, not deployment acceptance. The SRS is a draft; company approval and procedures take precedence. **Implemented** means a code path exists, not that a device or database integration test passed. The browser prototype is simulated throughout.
 
 ## Evidence and trust boundary

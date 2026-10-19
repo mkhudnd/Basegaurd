@@ -1,5 +1,7 @@
 # Guard incident journey — verification and Android handoff
 
+**Historical checkpoint:** For the later Gemini UI integration and current check results, see [GEMINI_INTEGRATION_REPORT.md](GEMINI_INTEGRATION_REPORT.md). The verification statements below describe the earlier sprint only.
+
 ## Implementation scope
 
 The native guard app uses the existing Supabase password sign-in, server-filtered duty
