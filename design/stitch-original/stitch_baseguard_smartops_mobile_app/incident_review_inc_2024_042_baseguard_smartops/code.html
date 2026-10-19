@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"text-muted":"#556771","surface-tint":"#33675a","primary-soft":"#E7F2EE","on-tertiary":"#ffffff","surface-container-highest":"#d5e5f0","danger-soft":"#FCEAE7","warning":"#9D620A","on-primary-container":"#89beae","text":"#17252D","secondary":"#4e6170","on-tertiary-fixed":"#341007","inverse-primary":"#9bd1c1","surface-container-lowest":"#ffffff","surface":"#FFFFFF","on-secondary-fixed":"#091d2b","primary-fixed":"#b7eedd","warning-soft":"#FFF3D6","on-danger":"#FFFFFF","primary-fixed-dim":"#9bd1c1","on-background":"#0f1d25","inverse-surface":"#24323b","on-primary":"#ffffff","danger":"#B43732","surface-variant":"#d5e5f0","border":"#D9E2E6","on-surface":"#0f1d25","on-secondary":"#ffffff","tertiary-container":"#68392d","tertiary":"#4d2319","on-tertiary-fixed-variant":"#693a2e","primary-container":"#174e42","primary-hover":"#113F36","surface-container":"#e1f0fb","secondary-fixed":"#d1e5f8","surface-muted":"#EEF2F4","success":"#1B7C55","on-primary-fixed":"#00201a","primary":"#00362c","on-tertiary-container":"#e5a494","surface-container-low":"#e9f5ff","surface-dim":"#cddce7","outline":"#707975","error":"#ba1a1a","surface-bright":"#f5faff","on-primary-fixed-variant":"#194f43","on-secondary-fixed-variant":"#364958","secondary-container":"#d1e5f8","on-secondary-container":"#546777","inverse-on-surface":"#e4f3fe","surface-container-high":"#dbeaf5","offline-soft":"#F0EAF8","offline":"#73549B","error-container":"#ffdad6","background":"#F6F8F9","on-surface-variant":"#404945","tertiary-fixed-dim":"#fab6a6","focus":"#246FA8","secondary-fixed-dim":"#b5c9db","on-error":"#ffffff","on-error-container":"#93000a","outline-variant":"#c0c9c4","tertiary-fixed":"#ffdad2"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","xs":"4px","space-sm":"0.5rem","md":"12px","space-2xl":"2rem","gutter-desktop":"1.5rem","space-md":"0.75rem","sm":"8px","space-lg":"1rem","xl":"32px","space-xl":"1.5rem","lg":"24px","margin-desktop":"2rem","base":"16px","margin":"1rem","xxl":"40px","space-3xl":"2.5rem","gutter":"1rem"},"fontFamily":{"heading-sm":["Noto Sans"],"label":["Noto Sans"],"heading-md":["Noto Sans"],"caption":["Noto Sans"],"body":["Noto Sans"],"heading-lg":["Noto Sans"]},"fontSize":{"heading-sm":["16px",{"lineHeight":"24px","fontWeight":"700"}],"label":["14px",{"lineHeight":"20px","fontWeight":"600"}],"heading-md":["20px",{"lineHeight":"28px","fontWeight":"700"}],"caption":["12px",{"lineHeight":"16px","fontWeight":"400"}],"body":["16px",{"lineHeight":"24px","fontWeight":"400"}],"heading-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}]}}}};</script></head><body class="bg-background font-body text-text min-h-screen"><aside class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-border z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-16 px-space-lg flex items-center gap-space-sm border-b border-border bg-surface-muted/50"><div class="w-9 h-9 rounded-DEFAULT bg-primary flex items-center justify-center text-on-primary flex-shrink-0"><span class="material-symbols-outlined text-[20px]">security</span></div><div class="flex flex-col min-w-0"><div class="flex items-center gap-xs"><span class="font-heading-sm text-heading-sm tracking-tight text-primary leading-none">Baseguard</span></div><span class="font-caption text-caption text-text-muted leading-tight truncate">SmartOps</span></div><span class="ml-auto bg-primary-soft text-primary font-caption text-[10px] font-bold px-space-xs py-[2px] rounded-DEFAULT border border-border uppercase tracking-wider">Supervisor</span></div><nav class="flex flex-col py-space-sm" data-active-classes="bg-primary-soft text-primary font-bold border-l-4 border-primary"><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="overview" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-label text-label">Overview</span></div></a><a aria-current="page" class="flex items-center justify-between px-space-lg py-space-md transition-colors bg-primary-soft text-primary font-bold border-l-4 border-primary" data-path="incident-inbox" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">inbox</span><span class="font-label text-label">Incident Inbox</span></div><span class="bg-danger text-on-danger font-caption text-caption font-bold px-sm py-[1px] rounded-full min-w-[20px] text-center leading-tight">2</span></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="occurrence-book" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">menu_book</span><span class="font-label text-label">Occurrence Book</span></div></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="shift-handovers" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">sync_alt</span><span class="font-label text-label">Shift Handovers</span></div><span class="bg-warning-soft text-warning font-caption text-caption font-bold px-sm py-[1px] rounded-full border border-border min-w-[20px] text-center leading-tight">1</span></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="sites-and-staff" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">badge</span><span class="font-label text-label">Sites &amp; Staff</span></div></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="daily-reports" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">summarize</span><span class="font-label text-label">Daily Reports</span></div></a></nav></div><div class="flex flex-col border-t border-border bg-surface-muted/30"><div class="px-space-md py-space-sm border-b border-border flex items-center gap-sm"><div class="w-2 h-2 rounded-full bg-success animate-pulse flex-shrink-0"></div><div class="flex flex-col min-w-0"><span class="font-caption text-[11px] font-bold text-success uppercase tracking-wider truncate">Harare Hub Uplink</span><span class="font-caption text-[10px] text-text-muted truncate">Normal sync latency (&lt;200ms)</span></div></div><div class="p-space-md flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex flex-col min-w-0"><span class="font-label text-label text-text truncate leading-snug">Farai Sibanda</span><span class="font-caption text-[11px] text-text-muted truncate">Sector A &amp; B</span></div></div><a class="w-8 h-8 rounded-DEFAULT border border-border bg-surface hover:bg-surface-muted text-text-muted hover:text-danger flex items-center justify-center transition-colors flex-shrink-0" data-path="login" href="#" title="Log out"><span class="material-symbols-outlined text-[18px]">logout</span></a></div></div></aside><div class="pl-[240px]"><header class="fixed top-0 left-[240px] right-0 h-16 bg-surface border-b border-border z-40 flex items-center justify-between px-gutter-desktop"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm text-text-muted"><span class="font-label text-label font-bold text-primary">SmartOps</span><span class="font-caption text-caption text-text-muted">/</span><span class="font-label text-label text-text">Supervisor Console</span></div><div class="h-5 w-[1px] bg-border"></div><div class="relative flex items-center"><label class="sr-only" for="site-select">Active Assigned Site</label><select class="bg-surface-muted text-text font-label text-label border border-border rounded-DEFAULT py-xs pl-space-md pr-space-2xl appearance-none focus:outline-none focus:border-focus" id="site-select"><option>All Authorized Sites (Harare Central &amp; West)</option><option>Demonstration Site A — Warehouse &amp; Logistics</option><option>Demonstration Site B — Willowvale Depot</option></select><span class="material-symbols-outlined text-text-muted text-[18px] absolute right-space-sm pointer-events-none">arrow_drop_down</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs px-space-md py-xs bg-surface-muted border border-border rounded-DEFAULT"><span class="material-symbols-outlined text-text-muted text-[18px]">calendar_today</span><span class="font-caption text-caption text-text font-semibold">Today: 24 Oct 2024</span></div><div class="flex items-center gap-space-xs px-space-md py-xs bg-primary-soft border border-border rounded-full"><span class="material-symbols-outlined text-success text-[16px]">cloud_done</span><span class="font-caption text-caption text-success font-semibold">14 patrol terminals synced (0 errors)</span></div><button class="h-9 px-space-md bg-surface border border-border rounded-DEFAULT hover:bg-surface-muted active:bg-surface-variant text-text flex items-center gap-xs font-label text-label transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">refresh</span><span>Refresh</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-background min-h-screen p-lg"><div class="flex flex-col w-full">
+<!-- Sub-header Breadcrumb & Operational Quick Bar -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-space-lg mb-space-lg">
+<div class="flex items-center gap-space-sm text-text-muted">
+<a class="font-label text-label hover:text-primary transition-colors flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Incident Inbox
+      </a>
+<span class="text-text-muted font-caption text-caption">/</span>
+<span class="font-label text-label text-text font-bold">#INC-2024-042</span>
+<span class="bg-surface-muted text-text-muted font-caption text-caption px-space-sm py-[2px] rounded-DEFAULT">Demonstration Site A</span>
+</div>
+<div class="flex items-center gap-space-md mt-space-sm sm:mt-0">
+<div class="flex items-center gap-xs text-text-muted font-caption text-caption bg-surface px-space-md py-xs rounded-DEFAULT shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-success">verified_user</span>
+<span>Hardware Tamper Check: Pass</span>
+</div>
+<button class="flex items-center gap-xs px-space-md py-xs bg-surface text-text hover:bg-surface-muted rounded-DEFAULT font-label text-label shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">print</span>
+<span>Export Dossier</span>
+</button>
+</div>
+</div>
+<!-- Main 2-Column Incident Dossier Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+<!-- LEFT COLUMN: Incident Report, Field Evidence & Integrity Timeline (65% -> 8 Cols) -->
+<div class="lg:col-span-8 flex flex-col gap-space-xl">
+<!-- Incident Header Banner Card -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm flex-wrap">
+<!-- Status Badge -->
+<div class="inline-flex items-center gap-xs px-space-md py-xs rounded-full bg-warning-soft text-warning">
+<span class="w-2 h-2 rounded-full bg-warning animate-ping"></span>
+<span class="font-label text-label uppercase tracking-wide">Awaiting Supervisor Acknowledgment</span>
+</div>
+<!-- Severity Pill -->
+<div class="inline-flex items-center gap-xs px-space-md py-xs rounded-full bg-danger-soft text-danger">
+<span class="material-symbols-outlined text-[16px]">priority_high</span>
+<span class="font-label text-label uppercase tracking-wide">High Severity</span>
+</div>
+</div>
+<span class="font-caption text-caption text-text-muted uppercase tracking-wider">Ref: #INC-2024-042</span>
+</div>
+<div class="flex flex-col gap-xs pt-space-xs">
+<span class="font-caption text-caption text-text-muted uppercase tracking-wider">Occurrence Category</span>
+<h1 class="font-heading-lg text-heading-lg text-text">Security Observation / Physical Tamper Concern</h1>
+<div class="flex items-center gap-space-xs text-text-muted font-label text-label pt-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">warehouse</span>
+<span>Demonstration Site A — Warehouse &amp; Logistics (Harare Industrial Sector)</span>
+</div>
+</div>
+</div>
+<!-- Guard Field Report Details -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col gap-space-lg">
+<div class="flex items-center justify-between pb-space-sm bg-surface-muted/40 p-space-md rounded-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[24px]">badge</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-bold">Officer T. Moyo</span>
+<span class="font-caption text-caption text-text-muted">Field ID: BG-8492 • Patrol Unit #1 • Beat Shift Alpha</span>
+</div>
+</div>
+<div class="hidden sm:flex flex-col items-end">
+<span class="font-caption text-caption text-text-muted">Field Terminal</span>
+<span class="font-label text-label text-text">Blackview BV9900 Pro (Terminal #09)</span>
+</div>
+</div>
+<!-- Verbatim Statement -->
+<div class="flex flex-col gap-xs">
+<span class="font-caption text-caption text-text-muted uppercase tracking-wider">Verbatim Guard Narrative (Field Entry)</span>
+<div class="bg-surface-muted p-space-lg rounded-lg text-text font-body text-body leading-relaxed select-text">
+            “Noticed padlock on secondary storage shed #4 has scratch marks. Shed door remains locked and intact. Informed guard partner Officer Ndlovu to increase sweep frequency.”
+          </div>
+</div>
+<!-- Verification Tags & GPS Telemetry -->
+<div class="flex flex-wrap items-center gap-space-sm pt-xs">
+<div class="inline-flex items-center gap-xs bg-primary-soft text-primary px-space-md py-xs rounded-DEFAULT">
+<span class="material-symbols-outlined text-[16px]">pin_drop</span>
+<span class="font-caption text-caption font-semibold">Geofence Verified: 17°49'32"S 31°02'40"E</span>
+</div>
+<div class="inline-flex items-center gap-xs bg-primary-soft text-primary px-space-md py-xs rounded-DEFAULT">
+<span class="material-symbols-outlined text-[16px]">lock_reset</span>
+<span class="font-caption text-caption font-semibold">Tamper Checked</span>
+</div>
+<div class="inline-flex items-center gap-xs bg-primary-soft text-primary px-space-md py-xs rounded-DEFAULT">
+<span class="material-symbols-outlined text-[16px]">group</span>
+<span class="font-caption text-caption font-semibold">Relief Briefed (Partner Notified)</span>
+</div>
+<div class="inline-flex items-center gap-xs bg-surface-muted text-text-muted px-space-md py-xs rounded-DEFAULT">
+<span class="material-symbols-outlined text-[16px]">battery_std</span>
+<span class="font-caption text-caption">Device Battery: 88%</span>
+</div>
+</div>
+<!-- Inspection Photo Evidence Placeholders -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<span class="font-caption text-caption text-text-muted uppercase tracking-wider">Tamper Photographic Log (2 Attachments Synced)</span>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-xs bg-surface-muted p-space-sm rounded-lg">
+<img class="w-full h-44 object-cover rounded-DEFAULT bg-surface-dim" data-alt="High-contrast close-up security inspection photo showing a heavy brass industrial padlock on a corrugated steel warehouse latch with visible metallic pry scratch marks, natural midday sunlight, documentary style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2Lz5jeSuY0Nh86FtiunJHntu--TMY83VvGvGtAeSqi81iUSA3f922wYYdUGFGIrOBcGK7S4yVxV0rOeFsgMRed_sqbFnbvJ9BiGADfF0TRvf3_Ro1kNELQbuxpQYcEYNnE60GWlAl1i7JR9A6dhDqCPyTkwuCi9j_VhtlpoGk0TBCLN6bXck9wPjo2VXZxDhBeRR6nf9T4UJHpp5XvcAW2VDGytCHiRTF4nXGGt4FcG9b2-Pwf37tXA"/>
+<div class="flex items-center justify-between px-xs pt-xs">
+<span class="font-caption text-caption text-text font-semibold">Padlock Housing Scratches</span>
+<span class="font-caption text-caption text-text-muted">13:10:42 CAT</span>
+</div>
+</div>
+<div class="flex flex-col gap-xs bg-surface-muted p-space-sm rounded-lg">
+<img class="w-full h-44 object-cover rounded-DEFAULT bg-surface-dim" data-alt="Security patrol perspective of an industrial corrugated zinc warehouse shed door number four with surrounding concrete perimeter apron in Harare bright daylight, clear wide documentation angle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeAhQ_jiAI8LFoOgcm6ekeKprWPeWfWgJT9HVcynpl6UwbyojvVXYXuT-pVJdQCWoTktwaozLItRDPpmyZUHPrHe4JaIciGnrZmJBt-HxO_zg8MEx0zbMClda8UQKmzFxzCjIp5Je3Cr_eZSSFcDKOLuF5qgpxa1NC0bWUIsOfFF92Yj9yznNyC-xCNMr-GZKEzYdIkYDvhMYcu33KBSWqPcbcXj9k12DF1Ph2J2ny1PxULMyEPZPD6A"/>
+<div class="flex items-center justify-between px-xs pt-xs">
+<span class="font-caption text-caption text-text font-semibold">Shed #4 Perimeter Aspect</span>
+<span class="font-caption text-caption text-text-muted">13:11:15 CAT</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Critical Timestamps Comparison Card (Zimbabwe Offline / Low-Latency Context) -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">timer</span>
+<h2 class="font-heading-sm text-heading-sm text-text">Data Sync &amp; Hardware Clock Integrity</h2>
+</div>
+<span class="inline-flex items-center gap-xs px-space-sm py-[2px] bg-primary-soft text-primary rounded-full font-caption text-caption font-bold">
+<span class="material-symbols-outlined text-[14px]">format_image_left</span> Verified Authentic
+          </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md pt-xs">
+<div class="bg-surface-muted p-space-md rounded-lg flex flex-col gap-xs">
+<span class="font-caption text-caption text-text-muted">Time of Occurrence (Guard Device)</span>
+<span class="font-heading-md text-heading-md text-text">13:10 <span class="font-caption text-caption text-text-muted">CAT</span></span>
+<span class="font-caption text-caption text-text-muted">Internal RTC Hardware Clock</span>
+</div>
+<div class="bg-surface-muted p-space-md rounded-lg flex flex-col gap-xs">
+<span class="font-caption text-caption text-text-muted">Time Received (Baseguard Cloud)</span>
+<span class="font-heading-md text-heading-md text-text">13:14 <span class="font-caption text-caption text-text-muted">CAT</span></span>
+<span class="font-caption text-caption text-success font-semibold">4m Sync Latency (Cellular Uplink)</span>
+</div>
+<div class="bg-surface-muted p-space-md rounded-lg flex flex-col gap-xs">
+<span class="font-caption text-caption text-text-muted">Server Integrity Signature</span>
+<div class="flex items-center gap-xs text-success pt-xs">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="font-label text-label">Cryptographic Match</span>
+</div>
+<span class="font-caption text-caption text-text-muted truncate">SHA-256: 8a4d...f02e (No drift)</span>
+</div>
+</div>
+<div class="flex items-start gap-space-sm p-space-md bg-surface-muted/50 rounded-lg text-text-muted font-caption text-caption">
+<span class="material-symbols-outlined text-[18px] text-text-muted flex-shrink-0">info</span>
+<span>Because sector bandwidth varies across Harare outer industrial zones, records are locally buffered with hardware timestamps and committed cryptographically as soon as 2G/3G connectivity is re-established.</span>
+</div>
+</div>
+<!-- Chronological Audit Timeline -->
+<div class="bg-surface rounded-xl p-space-xl shadow-sm flex flex-col gap-space-lg">
+<div class="flex items-center justify-between">
+<h2 class="font-heading-sm text-heading-sm text-text">Audit Trail &amp; Chain of Custody</h2>
+<span class="font-caption text-caption text-text-muted">4 recorded operational steps</span>
+</div>
+<div class="relative flex flex-col gap-space-lg pl-space-lg before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-surface-muted">
+<!-- Event 1 -->
+<div class="relative flex items-start gap-space-md">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary flex-shrink-0 relative z-10">
+<span class="material-symbols-outlined text-[14px]">edit_note</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<span class="font-label text-label text-text font-bold">13:10 CAT</span>
+<span class="font-caption text-caption text-text-muted">• Terminal Event</span>
+</div>
+<span class="font-body text-body text-text">Incident created in offline cache by Officer T. Moyo at Shed #4.</span>
+</div>
+</div>
+<!-- Event 2 -->
+<div class="relative flex items-start gap-space-md">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary flex-shrink-0 relative z-10">
+<span class="material-symbols-outlined text-[14px]">cloud_upload</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<span class="font-label text-label text-text font-bold">13:14 CAT</span>
+<span class="font-caption text-caption text-text-muted">• Baseguard Server Uplink</span>
+</div>
+<span class="font-body text-body text-text">Uplink handshake completed; record and 2 image payloads securely committed to primary database.</span>
+</div>
+</div>
+<!-- Event 3 -->
+<div class="relative flex items-start gap-space-md">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary flex-shrink-0 relative z-10">
+<span class="material-symbols-outlined text-[14px]">notifications_active</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<span class="font-label text-label text-text font-bold">13:15 CAT</span>
+<span class="font-caption text-caption text-text-muted">• SmartOps Dispatch Alert</span>
+</div>
+<span class="font-body text-body text-text">Automated high-priority notice routed to Area Supervisor Farai Sibanda (Push &amp; SMS).</span>
+</div>
+</div>
+<!-- Event 4 (Pending) -->
+<div class="relative flex items-start gap-space-md">
+<div class="w-6 h-6 rounded-full bg-warning-soft text-warning flex items-center justify-center flex-shrink-0 relative z-10">
+<span class="material-symbols-outlined text-[14px]">pending_actions</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<span class="font-label text-label text-warning font-bold">[Pending Supervisor Signature]</span>
+<span class="font-caption text-caption text-text-muted">• Active Step</span>
+</div>
+<span class="font-body text-body text-text-muted">Awaiting supervisor formal acknowledgment and site deployment directives.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Supervisor Action Panel & Helpline (35% -> 4 Cols) -->
+<div class="lg:col-span-4 flex flex-col gap-space-xl lg:sticky lg:top-20">
+<!-- Official Supervisor Acknowledgment Box -->
+<div class="bg-surface rounded-xl p-space-xl shadow-md flex flex-col gap-space-lg">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-xs text-primary">
+<span class="material-symbols-outlined text-[20px]">assignment_turned_in</span>
+<span class="font-caption text-caption font-bold uppercase tracking-wider">Supervisor Action Protocol</span>
+</div>
+<h2 class="font-heading-sm text-heading-sm text-text">Acknowledgment &amp; Directives</h2>
+<span class="font-caption text-caption text-text-muted">Reviewing as Supervisor Farai Sibanda</span>
+</div>
+<!-- Form Directives Area -->
+<form class="flex flex-col gap-space-lg" id="ackForm" onsubmit="event.preventDefault(); document.getElementById('ackSuccess').classList.remove('hidden');">
+<div class="flex flex-col gap-xs">
+<label class="font-label text-label text-text" for="supervisorInstructions">Supervisor Assessment &amp; Site Instructions</label>
+<textarea class="w-full p-space-md bg-surface-muted text-text font-body text-body rounded-lg focus:outline-none focus:bg-surface focus:ring-2 focus:ring-focus transition-all resize-none leading-relaxed" id="supervisorInstructions" rows="5">Contacted Post Commander. Confirmed padlock has surface gouges, core intact. Instructed Day shift to maintain static watch at Shed #4 until 18:00 handover. Mobile patrol unit alerted for 15:00 visit.</textarea>
+</div>
+<!-- Radio / Checkbox Directives -->
+<div class="flex flex-col gap-space-sm">
+<span class="font-caption text-caption text-text-muted uppercase tracking-wider">Operational Affirmations</span>
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-muted transition-colors cursor-pointer">
+<input checked="" class="w-5 h-5 mt-[2px] rounded text-primary focus:ring-focus accent-primary" type="checkbox"/>
+<span class="font-label text-label text-text leading-snug">Mark as formally acknowledged in official Occurrence Book</span>
+</label>
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-muted transition-colors cursor-pointer">
+<input checked="" class="w-5 h-5 mt-[2px] rounded text-primary focus:ring-focus accent-primary" type="checkbox"/>
+<span class="font-label text-label text-text leading-snug">Telephoned post guard directly (Confirmed via VHF Ch 4 / Phone)</span>
+</label>
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-muted transition-colors cursor-pointer">
+<input checked="" class="w-5 h-5 mt-[2px] rounded text-primary focus:ring-focus accent-primary" type="checkbox"/>
+<span class="font-label text-label text-text leading-snug">Instruct incoming night shift to conduct joint padlock inspection</span>
+</label>
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg hover:bg-surface-muted transition-colors cursor-pointer">
+<input class="w-5 h-5 mt-[2px] rounded text-primary focus:ring-focus accent-primary" type="checkbox"/>
+<span class="font-label text-label text-text leading-snug">Escalate to Baseguard Operations Manager (HQ Command)</span>
+</label>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-space-sm pt-xs">
+<!-- Primary Action -->
+<button class="w-full h-[52px] bg-primary hover:bg-primary-hover active:bg-primary text-on-primary rounded-xl font-label text-label flex items-center justify-center gap-xs shadow-sm transition-colors" type="submit">
+<span class="material-symbols-outlined text-[20px]">draw</span>
+<span>Sign &amp; Acknowledge Incident</span>
+</button>
+<!-- Secondary Action -->
+<button class="w-full h-[52px] bg-surface-muted hover:bg-surface-dim active:bg-surface-dim text-text rounded-xl font-label text-label flex items-center justify-center gap-xs transition-colors" onclick="alert('Message request dispatched to Officer Moyo field terminal.');" type="button">
+<span class="material-symbols-outlined text-[20px]">chat_bubble_outline</span>
+<span>Request Further Details from Officer</span>
+</button>
+<!-- Destructive/Caution Action -->
+<button class="w-full py-space-sm text-text-muted hover:text-danger rounded-lg font-label text-label text-center transition-colors" onclick="confirm('Mark incident #INC-2024-042 as benign/false alarm?');" type="button">
+              Close as False Alarm / Benign
+            </button>
+</div>
+<!-- Feedback notification on submit -->
+<div class="hidden p-space-md bg-primary-soft text-primary rounded-lg flex items-center gap-space-sm animate-pulse" id="ackSuccess">
+<span class="material-symbols-outlined text-success">check_circle</span>
+<span class="font-label text-label">Incident signed and locked in digital OB. Handover flag created.</span>
+</div>
+</form>
+</div>
+<!-- Control Room Rapid Contact Box -->
+<div class="bg-surface rounded-xl p-space-lg shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-danger-soft text-danger flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-bold">Harare Control Room Helpline</span>
+<span class="font-caption text-caption text-text-muted">24/7 Rapid Mobile Response</span>
+</div>
+</div>
+<p class="font-caption text-caption text-text-muted leading-relaxed">
+          Need immediate backup vehicle deployment or armed response support at Demonstration Site A?
+        </p>
+<a class="flex items-center justify-between p-space-md bg-surface-muted hover:bg-surface-dim text-text rounded-lg transition-colors" href="tel:+263242700123">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">call</span>
+<span class="font-label text-label font-bold">+263 (242) 700-123</span>
+</div>
+<span class="font-caption text-caption text-text-muted font-bold bg-surface px-space-xs py-[2px] rounded">Speed-dial 101</span>
+</a>
+</div>
+<!-- Shift Context Note -->
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface rounded-xl shadow-sm text-text-muted">
+<div class="flex items-center gap-xs font-caption text-caption">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>Next Shift Change: 18:00 CAT</span>
+</div>
+<span class="font-caption text-caption font-bold text-primary">Relief: Unit #4 (K. Sibanda)</span>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

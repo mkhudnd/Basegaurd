@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"text-muted":"#556771","surface-tint":"#33675a","primary-soft":"#E7F2EE","on-tertiary":"#ffffff","surface-container-highest":"#d5e5f0","danger-soft":"#FCEAE7","warning":"#9D620A","on-primary-container":"#89beae","text":"#17252D","secondary":"#4e6170","on-tertiary-fixed":"#341007","inverse-primary":"#9bd1c1","surface-container-lowest":"#ffffff","surface":"#FFFFFF","on-secondary-fixed":"#091d2b","primary-fixed":"#b7eedd","warning-soft":"#FFF3D6","on-danger":"#FFFFFF","primary-fixed-dim":"#9bd1c1","on-background":"#0f1d25","inverse-surface":"#24323b","on-primary":"#ffffff","danger":"#B43732","surface-variant":"#d5e5f0","border":"#D9E2E6","on-surface":"#0f1d25","on-secondary":"#ffffff","tertiary-container":"#68392d","tertiary":"#4d2319","on-tertiary-fixed-variant":"#693a2e","primary-container":"#174e42","primary-hover":"#113F36","surface-container":"#e1f0fb","secondary-fixed":"#d1e5f8","surface-muted":"#EEF2F4","success":"#1B7C55","on-primary-fixed":"#00201a","primary":"#00362c","on-tertiary-container":"#e5a494","surface-container-low":"#e9f5ff","surface-dim":"#cddce7","outline":"#707975","error":"#ba1a1a","surface-bright":"#f5faff","on-primary-fixed-variant":"#194f43","on-secondary-fixed-variant":"#364958","secondary-container":"#d1e5f8","on-secondary-container":"#546777","inverse-on-surface":"#e4f3fe","surface-container-high":"#dbeaf5","offline-soft":"#F0EAF8","offline":"#73549B","error-container":"#ffdad6","background":"#F6F8F9","on-surface-variant":"#404945","tertiary-fixed-dim":"#fab6a6","focus":"#246FA8","secondary-fixed-dim":"#b5c9db","on-error":"#ffffff","on-error-container":"#93000a","outline-variant":"#c0c9c4","tertiary-fixed":"#ffdad2"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","xs":"4px","space-sm":"0.5rem","md":"12px","space-2xl":"2rem","gutter-desktop":"1.5rem","space-md":"0.75rem","sm":"8px","space-lg":"1rem","xl":"32px","space-xl":"1.5rem","lg":"24px","margin-desktop":"2rem","base":"16px","margin":"1rem","xxl":"40px","space-3xl":"2.5rem","gutter":"1rem"},"fontFamily":{"heading-sm":["Noto Sans"],"label":["Noto Sans"],"heading-md":["Noto Sans"],"caption":["Noto Sans"],"body":["Noto Sans"],"heading-lg":["Noto Sans"]},"fontSize":{"heading-sm":["16px",{"lineHeight":"24px","fontWeight":"700"}],"label":["14px",{"lineHeight":"20px","fontWeight":"600"}],"heading-md":["20px",{"lineHeight":"28px","fontWeight":"700"}],"caption":["12px",{"lineHeight":"16px","fontWeight":"400"}],"body":["16px",{"lineHeight":"24px","fontWeight":"400"}],"heading-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}]}}}};</script></head><body class="bg-background font-body text-text min-h-screen"><aside class="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-border z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-16 px-space-lg flex items-center gap-space-sm border-b border-border bg-surface-muted/50"><div class="w-9 h-9 rounded-DEFAULT bg-primary flex items-center justify-center text-on-primary flex-shrink-0"><span class="material-symbols-outlined text-[20px]">security</span></div><div class="flex flex-col min-w-0"><div class="flex items-center gap-xs"><span class="font-heading-sm text-heading-sm tracking-tight text-primary leading-none">Baseguard</span></div><span class="font-caption text-caption text-text-muted leading-tight truncate">SmartOps</span></div><span class="ml-auto bg-primary-soft text-primary font-caption text-[10px] font-bold px-space-xs py-[2px] rounded-DEFAULT border border-border uppercase tracking-wider">Supervisor</span></div><nav class="flex flex-col py-space-sm" data-active-classes="bg-primary-soft text-primary font-bold border-l-4 border-primary"><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="overview" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-label text-label">Overview</span></div></a><a aria-current="page" class="flex items-center justify-between px-space-lg py-space-md transition-colors bg-primary-soft text-primary font-bold border-l-4 border-primary" data-path="incident-inbox" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">inbox</span><span class="font-label text-label">Incident Inbox</span></div><span class="bg-danger text-on-danger font-caption text-caption font-bold px-sm py-[1px] rounded-full min-w-[20px] text-center leading-tight">2</span></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="occurrence-book" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">menu_book</span><span class="font-label text-label">Occurrence Book</span></div></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="shift-handovers" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">sync_alt</span><span class="font-label text-label">Shift Handovers</span></div><span class="bg-warning-soft text-warning font-caption text-caption font-bold px-sm py-[1px] rounded-full border border-border min-w-[20px] text-center leading-tight">1</span></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="sites-and-staff" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">badge</span><span class="font-label text-label">Sites &amp; Staff</span></div></a><a class="flex items-center justify-between px-space-lg py-space-md text-text-muted hover:bg-surface-muted hover:text-text transition-colors border-l-4 border-transparent" data-path="daily-reports" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[20px]">summarize</span><span class="font-label text-label">Daily Reports</span></div></a></nav></div><div class="flex flex-col border-t border-border bg-surface-muted/30"><div class="px-space-md py-space-sm border-b border-border flex items-center gap-sm"><div class="w-2 h-2 rounded-full bg-success animate-pulse flex-shrink-0"></div><div class="flex flex-col min-w-0"><span class="font-caption text-[11px] font-bold text-success uppercase tracking-wider truncate">Harare Hub Uplink</span><span class="font-caption text-[10px] text-text-muted truncate">Normal sync latency (&lt;200ms)</span></div></div><div class="p-space-md flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex flex-col min-w-0"><span class="font-label text-label text-text truncate leading-snug">Farai Sibanda</span><span class="font-caption text-[11px] text-text-muted truncate">Sector A &amp; B</span></div></div><a class="w-8 h-8 rounded-DEFAULT border border-border bg-surface hover:bg-surface-muted text-text-muted hover:text-danger flex items-center justify-center transition-colors flex-shrink-0" data-path="login" href="#" title="Log out"><span class="material-symbols-outlined text-[18px]">logout</span></a></div></div></aside><div class="pl-[240px]"><header class="fixed top-0 left-[240px] right-0 h-16 bg-surface border-b border-border z-40 flex items-center justify-between px-gutter-desktop"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm text-text-muted"><span class="font-label text-label font-bold text-primary">SmartOps</span><span class="font-caption text-caption text-text-muted">/</span><span class="font-label text-label text-text">Supervisor Console</span></div><div class="h-5 w-[1px] bg-border"></div><div class="relative flex items-center"><label class="sr-only" for="site-select">Active Assigned Site</label><select class="bg-surface-muted text-text font-label text-label border border-border rounded-DEFAULT py-xs pl-space-md pr-space-2xl appearance-none focus:outline-none focus:border-focus" id="site-select"><option>All Authorized Sites (Harare Central &amp; West)</option><option>Demonstration Site A — Warehouse &amp; Logistics</option><option>Demonstration Site B — Willowvale Depot</option></select><span class="material-symbols-outlined text-text-muted text-[18px] absolute right-space-sm pointer-events-none">arrow_drop_down</span></div></div><div class="flex items-center gap-space-md"><div class="hidden xl:flex items-center gap-space-xs px-space-md py-xs bg-surface-muted border border-border rounded-DEFAULT"><span class="material-symbols-outlined text-text-muted text-[18px]">calendar_today</span><span class="font-caption text-caption text-text font-semibold">Today: 24 Oct 2024</span></div><div class="flex items-center gap-space-xs px-space-md py-xs bg-primary-soft border border-border rounded-full"><span class="material-symbols-outlined text-success text-[16px]">cloud_done</span><span class="font-caption text-caption text-success font-semibold">14 patrol terminals synced (0 errors)</span></div><button class="h-9 px-space-md bg-surface border border-border rounded-DEFAULT hover:bg-surface-muted active:bg-surface-variant text-text flex items-center gap-xs font-label text-label transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">refresh</span><span>Refresh</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-background min-h-screen p-lg"><div class="flex flex-col w-full">
+<div class="relative bg-surface rounded-xl p-space-xl shadow-sm mb-space-xl overflow-hidden">
+<div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-primary/5 pointer-events-none blur-3xl"></div>
+<div class="relative flex flex-col xl:flex-row xl:items-center justify-between gap-space-lg">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-sm mb-space-xs">
+<span class="px-space-sm py-[2px] rounded-full bg-danger-soft text-danger font-caption text-caption font-bold tracking-wider uppercase">Live Escalation Stream</span>
+<span class="text-text-muted font-caption text-caption">•</span>
+<span class="font-caption text-caption text-text-muted flex items-center gap-[4px]">
+<span class="w-2 h-2 rounded-full bg-success inline-block"></span> 
+            Sync Loop Active (30s)
+          </span>
+</div>
+<h1 class="font-heading-lg text-heading-lg text-text tracking-tight">Incident Inbox — Operational Action Center</h1>
+<p class="font-body text-body text-text-muted mt-space-xs">Triage, verify field dispatches, and digitally acknowledge tactical security alerts across assigned sectors.</p>
+</div>
+<div class="flex items-center flex-wrap gap-space-md">
+<div class="flex items-center gap-space-xs px-space-md py-space-sm bg-surface-muted rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-danger text-[20px]" style="font-variation-settings: 'FILL' 1;">crisis_alert</span>
+<div class="flex flex-col">
+<span class="font-caption text-[11px] font-bold text-text-muted uppercase tracking-wider leading-none">Unacknowledged</span>
+<span class="font-heading-sm text-heading-sm text-danger leading-tight">2 Critical</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs px-space-md py-space-sm bg-surface-muted rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-warning text-[20px]">pending_actions</span>
+<div class="flex flex-col">
+<span class="font-caption text-[11px] font-bold text-text-muted uppercase tracking-wider leading-none">Under Review</span>
+<span class="font-heading-sm text-heading-sm text-warning leading-tight">4 Dispatches</span>
+</div>
+</div>
+<button class="h-[52px] px-space-lg bg-surface-muted text-text-muted rounded-lg font-label text-label flex items-center gap-space-xs cursor-not-allowed transition-all opacity-70" disabled="" id="bulk-ack-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">done_all</span>
+<span id="bulk-ack-label">Acknowledge Selected (0)</span>
+</button>
+<div class="relative inline-block text-left">
+<button class="h-[52px] px-space-lg bg-surface hover:bg-surface-muted text-text rounded-lg font-label text-label flex items-center gap-space-xs shadow-sm transition-all" id="export-dropdown-toggle" type="button">
+<span class="material-symbols-outlined text-[20px] text-text-muted">ios_share</span>
+<span>Export Incident Log</span>
+<span class="material-symbols-outlined text-[18px] text-text-muted">keyboard_arrow_down</span>
+</button>
+<div class="hidden absolute right-0 mt-space-xs w-56 bg-surface rounded-lg shadow-xl p-space-xs z-30" id="export-menu">
+<button class="w-full text-left px-space-md py-space-sm hover:bg-surface-muted rounded-DEFAULT font-label text-label text-text flex items-center justify-between" type="button">
+<span>Export as CSV Table</span>
+<span class="font-caption text-caption text-text-muted">.csv</span>
+</button>
+<button class="w-full text-left px-space-md py-space-sm hover:bg-surface-muted rounded-DEFAULT font-label text-label text-text flex items-center justify-between" type="button">
+<span>Shift Dossier Brief</span>
+<span class="font-caption text-caption text-text-muted">.pdf</span>
+</button>
+<button class="w-full text-left px-space-md py-space-sm hover:bg-surface-muted rounded-DEFAULT font-label text-label text-text flex items-center justify-between" type="button">
+<span>Raw JSON Stream</span>
+<span class="font-caption text-caption text-text-muted">.json</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface rounded-xl p-space-lg shadow-sm mb-space-lg flex flex-col gap-space-md">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-md items-center">
+<div class="lg:col-span-4 relative flex items-center">
+<span class="material-symbols-outlined text-text-muted text-[22px] absolute left-space-md pointer-events-none">search</span>
+<input class="w-full h-[52px] pl-[46px] pr-space-md bg-surface-muted rounded-lg text-text font-body text-label placeholder:text-text-muted focus:outline-none focus:bg-surface focus:shadow-sm" id="incident-search-input" placeholder="Search by Ref #, Site name, Guard name, or keyword..." type="text"/>
+<button class="hidden absolute right-space-md text-text-muted hover:text-text" id="clear-search-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="lg:col-span-2 relative">
+<label class="sr-only" for="filter-site">Site filter</label>
+<select class="w-full h-[52px] px-space-md bg-surface-muted rounded-lg font-label text-label text-text appearance-none pr-space-xl focus:outline-none focus:bg-surface focus:shadow-sm" id="filter-site">
+<option value="all">Site: All Authorized</option>
+<option value="site-a">Demonstration Site A</option>
+<option value="site-b">Demonstration Site B</option>
+</select>
+<span class="material-symbols-outlined text-text-muted text-[20px] absolute right-space-md top-1/2 -translate-y-1/2 pointer-events-none">unfold_more</span>
+</div>
+<div class="lg:col-span-2 relative">
+<label class="sr-only" for="filter-severity">Severity filter</label>
+<select class="w-full h-[52px] px-space-md bg-surface-muted rounded-lg font-label text-label text-text appearance-none pr-space-xl focus:outline-none focus:bg-surface focus:shadow-sm" id="filter-severity">
+<option value="all">Severity: All Levels</option>
+<option value="high">High Severity (RED)</option>
+<option value="medium">Medium Severity (AMBER)</option>
+<option value="low">Low / Info (BLUE)</option>
+</select>
+<span class="material-symbols-outlined text-text-muted text-[20px] absolute right-space-md top-1/2 -translate-y-1/2 pointer-events-none">unfold_more</span>
+</div>
+<div class="lg:col-span-2 relative">
+<label class="sr-only" for="filter-status">Status filter</label>
+<select class="w-full h-[52px] px-space-md bg-surface-muted rounded-lg font-label text-label text-text appearance-none pr-space-xl focus:outline-none focus:bg-surface focus:shadow-sm" id="filter-status">
+<option value="all">Status: All Records</option>
+<option value="new">New / Unack (2)</option>
+<option value="ack">Acknowledged (3)</option>
+<option value="progress">In Progress (1)</option>
+<option value="closed">Closed (14)</option>
+</select>
+<span class="material-symbols-outlined text-text-muted text-[20px] absolute right-space-md top-1/2 -translate-y-1/2 pointer-events-none">unfold_more</span>
+</div>
+<div class="lg:col-span-2 relative">
+<button class="w-full h-[52px] px-space-md bg-surface-muted rounded-lg font-label text-label text-text flex items-center justify-between focus:outline-none focus:bg-surface focus:shadow-sm" type="button">
+<span class="truncate flex items-center gap-xs">
+<span class="material-symbols-outlined text-text-muted text-[18px]">calendar_month</span>
+            Today (24 Oct)
+          </span>
+<span class="material-symbols-outlined text-text-muted text-[18px]">expand_more</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between flex-wrap pt-space-xs gap-space-sm text-text-muted">
+<div class="flex items-center gap-space-sm flex-wrap">
+<span class="font-caption text-caption font-bold uppercase tracking-wider text-text-muted">Filter Presets:</span>
+<button class="px-space-md py-[4px] bg-danger-soft text-danger rounded-full font-caption text-caption font-bold hover:bg-danger/20 transition-colors flex items-center gap-xs" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-danger"></span> High Priority Only (2)
+        </button>
+<button class="px-space-md py-[4px] bg-surface-muted text-text rounded-full font-caption text-caption hover:bg-surface-variant transition-colors" type="button">
+          Requires Callback
+        </button>
+<button class="px-space-md py-[4px] bg-surface-muted text-text rounded-full font-caption text-caption hover:bg-surface-variant transition-colors" type="button">
+          Hardware &amp; Sensor Faults
+        </button>
+<button class="text-focus hover:underline font-caption text-caption ml-space-xs flex items-center gap-[2px]" id="reset-filters-btn" type="button">
+<span class="material-symbols-outlined text-[14px]">restart_alt</span> Reset all filters
+        </button>
+</div>
+<div class="flex items-center gap-space-md font-caption text-caption">
+<span class="text-text-muted">Last sync cycle: <strong class="text-text font-semibold">13:15:02 CAT</strong></span>
+<span class="h-3 w-[1px] bg-border inline-block"></span>
+<span class="flex items-center gap-xs text-success font-semibold">
+<span class="material-symbols-outlined text-[16px]">sensors</span> Gateway Ping: 84ms
+        </span>
+</div>
+</div>
+</div>
+<div class="bg-surface rounded-xl shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse min-w-[1100px]" id="incidents-table">
+<thead>
+<tr class="bg-surface-muted text-text-muted font-label text-[13px] uppercase tracking-wider select-none">
+<th class="py-space-md px-space-lg w-12 text-center">
+<label class="sr-only" for="select-all-checkbox">Select All Incidents</label>
+<input class="w-5 h-5 rounded-DEFAULT text-primary focus:ring-0 cursor-pointer accent-primary align-middle" id="select-all-checkbox" type="checkbox"/>
+</th>
+<th class="py-space-md px-space-md font-bold cursor-pointer hover:text-text transition-colors" data-sort="severity">
+<div class="flex items-center gap-xs">Severity <span class="material-symbols-outlined text-[16px]">swap_vert</span></div>
+</th>
+<th class="py-space-md px-space-md font-bold cursor-pointer hover:text-text transition-colors" data-sort="ref">
+<div class="flex items-center gap-xs">Ref # <span class="material-symbols-outlined text-[16px]">swap_vert</span></div>
+</th>
+<th class="py-space-md px-space-md font-bold">Site &amp; Location</th>
+<th class="py-space-md px-space-md font-bold">Incident Type</th>
+<th class="py-space-md px-space-md font-bold">Guard / Terminal</th>
+<th class="py-space-md px-space-md font-bold">Reported (CAT)</th>
+<th class="py-space-md px-space-md font-bold">Received (CAT)</th>
+<th class="py-space-md px-space-md font-bold">Latency / Sync Mode</th>
+<th class="py-space-md px-space-md font-bold">Current Status</th>
+<th class="py-space-md px-space-lg text-right font-bold">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border/0 font-body text-body text-text" id="incidents-body">
+<tr class="hover:bg-surface-muted/60 transition-colors group bg-danger-soft/10" data-row-id="INC-2024-042" data-severity="high" data-site="site-a" data-status="new">
+<td class="py-space-lg px-space-lg text-center align-middle">
+<input class="incident-row-checkbox w-5 h-5 rounded-DEFAULT text-primary accent-primary cursor-pointer" data-id="INC-2024-042" type="checkbox"/>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<span class="inline-flex items-center gap-xs px-space-md py-[5px] rounded-full bg-danger-soft text-danger font-label text-[12px] font-bold tracking-wide">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">warning</span>
+                High Severity
+              </span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-semibold text-text font-label text-label">
+<a class="text-text hover:text-primary transition-colors hover:underline" href="#">#INC-2024-042</a>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-bold">Demonstration Site A</span>
+<span class="font-caption text-caption text-text-muted flex items-center gap-[3px]">
+<span class="material-symbols-outlined text-[14px]">location_on</span> Storage Shed #4 (Rear Padlock)
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col max-w-[240px]">
+<span class="font-label text-label text-text font-semibold">Attempted Tamper</span>
+<span class="font-caption text-caption text-text-muted truncate" title="Scratch marks and shears tool damage on Padlock #S4">Scratch marks on padlock latch</span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center font-label text-caption font-bold text-text-muted">
+                  TM
+                </div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-semibold">Officer T. Moyo</span>
+<span class="font-caption text-[11px] text-text-muted">Terminal #08 (Rugged-V)</span>
+</div>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text font-semibold">
+              13:10 <span class="font-caption text-caption text-text-muted font-normal">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text">
+              13:14 <span class="font-caption text-caption text-text-muted">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-xs">
+<span class="px-space-sm py-[2px] rounded-full bg-surface-muted font-caption text-[11px] font-semibold text-text-muted flex items-center gap-[3px]">
+<span class="w-2 h-2 rounded-full bg-success"></span> +4m Econet LTE
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<span class="inline-flex items-center gap-xs px-space-md py-[4px] rounded-full bg-danger text-on-danger font-label text-[12px] font-bold shadow-sm animate-pulse">
+                New (Unacknowledged)
+              </span>
+</td>
+<td class="py-space-lg px-space-lg text-right align-middle">
+<button class="h-10 px-space-md bg-primary hover:bg-primary-hover active:scale-[0.98] text-on-primary rounded-lg font-label text-[13px] font-bold shadow-sm flex items-center gap-xs ml-auto transition-all" onclick="acknowledgeSingle('INC-2024-042', this)" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Review &amp; Acknowledge</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-muted/60 transition-colors group" data-row-id="INC-2024-040" data-severity="high" data-site="site-b" data-status="ack">
+<td class="py-space-lg px-space-lg text-center align-middle">
+<input class="incident-row-checkbox w-5 h-5 rounded-DEFAULT text-primary accent-primary cursor-pointer" data-id="INC-2024-040" type="checkbox"/>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<span class="inline-flex items-center gap-xs px-space-md py-[5px] rounded-full bg-danger-soft text-danger font-label text-[12px] font-bold tracking-wide">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">warning</span>
+                High Severity
+              </span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-semibold text-text font-label text-label">
+<a class="text-text hover:text-primary transition-colors hover:underline" href="#">#INC-2024-040</a>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-bold">Demonstration Site B</span>
+<span class="font-caption text-caption text-text-muted flex items-center gap-[3px]">
+<span class="material-symbols-outlined text-[14px]">location_on</span> Main Gate Entrance Barrier
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col max-w-[240px]">
+<span class="font-label text-label text-text font-semibold">Unauthorized Vehicle Attempt</span>
+<span class="font-caption text-caption text-text-muted truncate" title="Unregistered Toyota Hilux forced past boom gate barrier">Toyota Hilux forced entry refusal</span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center font-label text-caption font-bold text-text-muted">
+                  PG
+                </div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-semibold">Officer P. Gumbo</span>
+<span class="font-caption text-[11px] text-text-muted">Terminal #02 (Gate Pod)</span>
+</div>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text font-semibold">
+              07:15 <span class="font-caption text-caption text-text-muted font-normal">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text">
+              07:16 <span class="font-caption text-caption text-text-muted">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-xs">
+<span class="px-space-sm py-[2px] rounded-full bg-surface-muted font-caption text-[11px] font-semibold text-text-muted flex items-center gap-[3px]">
+<span class="w-2 h-2 rounded-full bg-success"></span> +1m Starlink Direct
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col">
+<span class="inline-flex items-center gap-xs px-space-md py-[3px] rounded-full bg-primary-soft text-primary font-label text-[12px] font-semibold w-fit">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                  Acknowledged
+                </span>
+<span class="font-caption text-[11px] text-text-muted mt-[2px]">By Sup. Farai (07:18)</span>
+</div>
+</td>
+<td class="py-space-lg px-space-lg text-right align-middle">
+<button class="h-10 px-space-md bg-surface hover:bg-surface-muted text-text rounded-lg font-label text-[13px] font-semibold flex items-center gap-xs ml-auto shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px] text-text-muted">folder_open</span>
+<span>View Dossier</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-muted/60 transition-colors group" data-row-id="INC-2024-041" data-severity="medium" data-site="site-b" data-status="progress">
+<td class="py-space-lg px-space-lg text-center align-middle">
+<input class="incident-row-checkbox w-5 h-5 rounded-DEFAULT text-primary accent-primary cursor-pointer" data-id="INC-2024-041" type="checkbox"/>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<span class="inline-flex items-center gap-xs px-space-md py-[5px] rounded-full bg-warning-soft text-warning font-label text-[12px] font-bold tracking-wide">
+<span class="material-symbols-outlined text-[16px]">info</span>
+                Medium Severity
+              </span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-semibold text-text font-label text-label">
+<a class="text-text hover:text-primary transition-colors hover:underline" href="#">#INC-2024-041</a>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-bold">Demonstration Site B</span>
+<span class="font-caption text-caption text-text-muted flex items-center gap-[3px]">
+<span class="material-symbols-outlined text-[14px]">bolt</span> Gen-set Enclosure #01
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col max-w-[240px]">
+<span class="font-label text-label text-text font-semibold">ZESA Power Outage</span>
+<span class="font-caption text-caption text-text-muted truncate" title="Grid tripped at Willowvale feeder; standby Cummins 150kVA auto-started">Standby Gen auto-startup verified</span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center font-label text-caption font-bold text-text-muted">
+                  KN
+                </div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-semibold">Officer K. Ndlovu</span>
+<span class="font-caption text-[11px] text-text-muted">Terminal #14 (Patrol Team)</span>
+</div>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text font-semibold">
+              10:15 <span class="font-caption text-caption text-text-muted font-normal">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text">
+              10:16 <span class="font-caption text-caption text-text-muted">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-xs">
+<span class="px-space-sm py-[2px] rounded-full bg-surface-muted font-caption text-[11px] font-semibold text-text-muted flex items-center gap-[3px]">
+<span class="w-2 h-2 rounded-full bg-success"></span> +1m NetOne 4G
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col">
+<span class="inline-flex items-center gap-xs px-space-md py-[3px] rounded-full bg-warning-soft text-warning font-label text-[12px] font-semibold w-fit">
+<span class="material-symbols-outlined text-[14px]">engineering</span>
+                  In Progress
+                </span>
+<span class="font-caption text-[11px] text-text-muted mt-[2px]">FM Notified / Fuel at 88%</span>
+</div>
+</td>
+<td class="py-space-lg px-space-lg text-right align-middle">
+<button class="h-10 px-space-md bg-surface hover:bg-surface-muted text-text rounded-lg font-label text-[13px] font-semibold flex items-center gap-xs ml-auto shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px] text-text-muted">folder_open</span>
+<span>View Dossier</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-muted/60 transition-colors group opacity-85 hover:opacity-100" data-row-id="INC-2024-039" data-severity="low" data-site="site-a" data-status="closed">
+<td class="py-space-lg px-space-lg text-center align-middle">
+<input class="incident-row-checkbox w-5 h-5 rounded-DEFAULT text-primary accent-primary cursor-pointer" data-id="INC-2024-039" type="checkbox"/>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<span class="inline-flex items-center gap-xs px-space-md py-[5px] rounded-full bg-surface-muted text-text-muted font-label text-[12px] font-semibold tracking-wide">
+<span class="material-symbols-outlined text-[16px]">notifications_paused</span>
+                Low / Advisory
+              </span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-semibold text-text font-label text-label">
+<a class="text-text hover:text-primary transition-colors hover:underline" href="#">#INC-2024-039</a>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-bold">Demonstration Site A</span>
+<span class="font-caption text-caption text-text-muted flex items-center gap-[3px]">
+<span class="material-symbols-outlined text-[14px]">fence</span> North Perimeter (Post 6)
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col max-w-[240px]">
+<span class="font-label text-label text-text font-semibold">Sensor Beam Obscured</span>
+<span class="font-caption text-caption text-text-muted truncate" title="High vegetation causing beam intermittent interruption">Grass trimmed by ground maintenance</span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center font-label text-caption font-bold text-text-muted">
+                  TM
+                </div>
+<div class="flex flex-col">
+<span class="font-label text-label text-text font-semibold">Officer T. Moyo</span>
+<span class="font-caption text-[11px] text-text-muted">Terminal #08 (Rugged-V)</span>
+</div>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text font-semibold">
+              09:40 <span class="font-caption text-caption text-text-muted font-normal">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle font-label text-label text-text">
+              09:42 <span class="font-caption text-caption text-text-muted">CAT</span>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex items-center gap-xs">
+<span class="px-space-sm py-[2px] rounded-full bg-surface-muted font-caption text-[11px] font-semibold text-text-muted flex items-center gap-[3px]">
+<span class="w-2 h-2 rounded-full bg-success"></span> +2m Econet LTE
+                </span>
+</div>
+</td>
+<td class="py-space-lg px-space-md align-middle">
+<div class="flex flex-col">
+<span class="inline-flex items-center gap-xs px-space-md py-[3px] rounded-full bg-surface-muted text-text-muted font-label text-[12px] font-semibold w-fit">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+                  Closed / Resolved
+                </span>
+<span class="font-caption text-[11px] text-text-muted mt-[2px]">Logged 11:00 CAT</span>
+</div>
+</td>
+<td class="py-space-lg px-space-lg text-right align-middle">
+<button class="h-10 px-space-md bg-surface hover:bg-surface-muted text-text rounded-lg font-label text-[13px] font-semibold flex items-center gap-xs ml-auto shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px] text-text-muted">archive</span>
+<span>View Archive</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-space-lg bg-surface flex flex-col md:flex-row items-center justify-between gap-space-md select-none">
+<div class="flex items-center gap-space-md">
+<span class="font-label text-label text-text-muted">
+          Showing <span class="font-bold text-text" id="visible-count">4</span> of <span class="font-bold text-text">20</span> incidents recorded today
+        </span>
+<div class="hidden sm:flex items-center gap-xs text-text-muted font-caption text-caption">
+<span class="w-1.5 h-1.5 rounded-full bg-text-muted"></span>
+<span>Buffer: <span class="text-text font-semibold">16 unlisted in archives</span></span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-xs">
+<button class="w-9 h-9 rounded-lg bg-surface-muted text-text-muted flex items-center justify-center hover:bg-surface-variant transition-colors disabled:opacity-40" disabled="" type="button">
+<span class="material-symbols-outlined text-[18px]">first_page</span>
+</button>
+<button class="w-9 h-9 rounded-lg bg-surface-muted text-text-muted flex items-center justify-center hover:bg-surface-variant transition-colors disabled:opacity-40" disabled="" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-9 h-9 rounded-lg bg-primary text-on-primary font-label text-label font-bold flex items-center justify-center shadow-sm" type="button">
+            1
+          </button>
+<button class="w-9 h-9 rounded-lg bg-surface hover:bg-surface-muted text-text font-label text-label flex items-center justify-center transition-colors" type="button">
+            2
+          </button>
+<button class="w-9 h-9 rounded-lg bg-surface hover:bg-surface-muted text-text font-label text-label flex items-center justify-center transition-colors" type="button">
+            3
+          </button>
+<button class="w-9 h-9 rounded-lg bg-surface-muted text-text-muted flex items-center justify-center hover:bg-surface-variant transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<button class="w-9 h-9 rounded-lg bg-surface-muted text-text-muted flex items-center justify-center hover:bg-surface-variant transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">last_page</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-xl bg-danger-soft/70 rounded-xl p-space-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-danger text-on-danger flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[26px]">local_police</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-label font-bold text-danger uppercase tracking-wider flex items-center gap-xs">
+          Operational Security Mandate (SOP-SEC-09)
+        </span>
+<p class="font-body text-body text-text mt-[2px]">
+<strong>Operational Procedure:</strong> High severity incidents require immediate telephone confirmation with post guards in addition to digital acknowledgment.
+        </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm flex-shrink-0 w-full md:w-auto">
+<a class="h-11 px-space-md bg-surface hover:bg-surface-muted text-danger font-label text-label font-bold rounded-lg shadow-sm flex items-center justify-center gap-xs transition-colors w-full md:w-auto" href="tel:+263242700000">
+<span class="material-symbols-outlined text-[18px]">phone_in_talk</span>
+<span>Call Sector A Post (+263 242 700 000)</span>
+</a>
+</div>
+</div>
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center p-space-lg bg-black/40 backdrop-blur-sm" id="ack-modal">
+<div class="bg-surface rounded-xl shadow-xl max-w-lg w-full p-space-xl transform transition-all flex flex-col gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-primary-soft text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">verified</span>
+</div>
+<div>
+<h3 class="font-heading-sm text-heading-sm text-text">Verify &amp; Digitally Acknowledge</h3>
+<span class="font-caption text-caption text-text-muted font-bold" id="modal-ref-label">#INC-2024-042</span>
+</div>
+</div>
+<button class="text-text-muted hover:text-text" onclick="closeAckModal()" type="button">
+<span class="material-symbols-outlined text-[22px]">close</span>
+</button>
+</div>
+<div class="bg-surface-muted p-space-md rounded-lg flex flex-col gap-xs">
+<span class="font-caption text-caption text-text-muted font-semibold uppercase">Voice Confirmation Requirement</span>
+<p class="font-body text-[14px] text-text">Have you conducted initial verbal radio/phone communication with the reporting officer?</p>
+<label class="flex items-center gap-space-sm mt-space-xs cursor-pointer">
+<input class="w-5 h-5 accent-primary cursor-pointer" id="modal-confirm-checkbox" type="checkbox"/>
+<span class="font-label text-label text-text font-bold">I confirm voice contact was initiated with Officer T. Moyo</span>
+</label>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label text-label text-text font-semibold" for="ack-note">Immediate Action / Dispatch Directive</label>
+<textarea class="w-full p-space-md bg-surface-muted rounded-lg font-body text-label text-text placeholder:text-text-muted focus:outline-none focus:bg-surface focus:shadow-sm" id="ack-note" placeholder="Enter supervisor instructions (e.g., Canine patrol dispatched, CCTV camera locked on Shed #4)..." rows="3"></textarea>
+</div>
+<div class="flex items-center justify-end gap-space-md pt-space-xs">
+<button class="h-[52px] px-space-lg bg-surface hover:bg-surface-muted text-text font-label text-label rounded-lg transition-colors" onclick="closeAckModal()" type="button">
+          Cancel
+        </button>
+<button class="h-[52px] px-space-xl bg-primary hover:bg-primary-hover text-on-primary font-label text-label font-bold rounded-lg shadow-sm transition-all flex items-center gap-xs" id="confirm-modal-submit" onclick="submitAcknowledgment()" type="button">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span>Acknowledge Incident</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let activeModalRef = null;
+  const selectAll = document.getElementById('select-all-checkbox');
+  const rowCheckboxes = document.querySelectorAll('.incident-row-checkbox');
+  const bulkAckBtn = document.getElementById('bulk-ack-btn');
+  const bulkAckLabel = document.getElementById('bulk-ack-label');
+  const searchInput = document.getElementById('incident-search-input');
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+  const filterSite = document.getElementById('filter-site');
+  const filterSeverity = document.getElementById('filter-severity');
+  const filterStatus = document.getElementById('filter-status');
+  const resetFiltersBtn = document.getElementById('reset-filters-btn');
+  const exportToggle = document.getElementById('export-dropdown-toggle');
+  const exportMenu = document.getElementById('export-menu');
+
+  // Export dropdown toggling
+  exportToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    exportMenu.classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => {
+    exportMenu.classList.add('hidden');
+  });
+
+  // Bulk selection logic
+  function updateSelectionState() {
+    const checked = document.querySelectorAll('.incident-row-checkbox:checked');
+    const count = checked.length;
+    bulkAckLabel.textContent = `Acknowledge Selected (${count})`;
+    if (count > 0) {
+      bulkAckBtn.disabled = false;
+      bulkAckBtn.classList.remove('bg-surface-muted', 'text-text-muted', 'cursor-not-allowed', 'opacity-70');
+      bulkAckBtn.classList.add('bg-primary', 'hover:bg-primary-hover', 'text-on-primary', 'shadow-sm', 'cursor-pointer');
+    } else {
+      bulkAckBtn.disabled = true;
+      bulkAckBtn.classList.add('bg-surface-muted', 'text-text-muted', 'cursor-not-allowed', 'opacity-70');
+      bulkAckBtn.classList.remove('bg-primary', 'hover:bg-primary-hover', 'text-on-primary', 'shadow-sm', 'cursor-pointer');
+    }
+  }
+
+  selectAll.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    rowCheckboxes.forEach(cb => {
+      // only select visible rows
+      const row = cb.closest('tr');
+      if (row.style.display !== 'none') {
+        cb.checked = isChecked;
+      }
+    });
+    updateSelectionState();
+  });
+
+  rowCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const allChecked = Array.from(rowCheckboxes).every(c => c.checked);
+      selectAll.checked = allChecked;
+      updateSelectionState();
+    });
+  });
+
+  // Filter & Search Engine
+  function applyFilters() {
+    const query = searchInput.value.toLowerCase().trim();
+    const site = filterSite.value;
+    const severity = filterSeverity.value;
+    const status = filterStatus.value;
+    const rows = document.querySelectorAll('#incidents-body tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      const rSite = row.dataset.site;
+      const rSev = row.dataset.severity;
+      const rStat = row.dataset.status;
+
+      const matchesQuery = query === '' || text.includes(query);
+      const matchesSite = site === 'all' || rSite === site;
+      const matchesSev = severity === 'all' || rSev === severity;
+      const matchesStat = status === 'all' || rStat === status;
+
+      if (matchesQuery && matchesSite && matchesSev && matchesStat) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    document.getElementById('visible-count').textContent = visibleCount;
+    clearSearchBtn.classList.toggle('hidden', query.length === 0);
+  }
+
+  searchInput.addEventListener('input', applyFilters);
+  filterSite.addEventListener('change', applyFilters);
+  filterSeverity.addEventListener('change', applyFilters);
+  filterStatus.addEventListener('change', applyFilters);
+
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    applyFilters();
+  });
+
+  resetFiltersBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    filterSite.value = 'all';
+    filterSeverity.value = 'all';
+    filterStatus.value = 'all';
+    applyFilters();
+  });
+
+  // Modal acknowledgment actions
+  function acknowledgeSingle(refId, btnEl) {
+    activeModalRef = refId;
+    document.getElementById('modal-ref-label').textContent = `#${refId}`;
+    document.getElementById('modal-confirm-checkbox').checked = false;
+    document.getElementById('ack-note').value = '';
+    document.getElementById('ack-modal').classList.remove('hidden');
+  }
+
+  function closeAckModal() {
+    document.getElementById('ack-modal').classList.add('hidden');
+    activeModalRef = null;
+  }
+
+  function submitAcknowledgment() {
+    if (!activeModalRef) return;
+    const row = document.querySelector(`tr[data-row-id="${activeModalRef}"]`);
+    if (row) {
+      row.dataset.status = 'ack';
+      row.classList.remove('bg-danger-soft/10');
+      
+      // Update badge cell
+      const statusCell = row.children[9];
+      statusCell.innerHTML = `
+        <div class="flex flex-col">
+          <span class="inline-flex items-center gap-xs px-space-md py-[3px] rounded-full bg-primary-soft text-primary font-label text-[12px] font-semibold w-fit">
+            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+            Acknowledged
+          </span>
+          <span class="font-caption text-[11px] text-text-muted mt-[2px]">Just now by Sup. Farai</span>
+        </div>
+      `;
+
+      // Update action button
+      const actionCell = row.children[10];
+      actionCell.innerHTML = `
+        <button type="button" class="h-10 px-space-md bg-surface hover:bg-surface-muted text-text rounded-lg font-label text-[13px] font-semibold flex items-center gap-xs ml-auto shadow-sm transition-colors">
+          <span class="material-symbols-outlined text-[18px] text-text-muted">folder_open</span>
+          <span>View Dossier</span>
+        </button>
+      `;
+    }
+    closeAckModal();
+    applyFilters();
+  }
+
+  bulkAckBtn.addEventListener('click', () => {
+    const checkedBoxes = document.querySelectorAll('.incident-row-checkbox:checked');
+    checkedBoxes.forEach(cb => {
+      const id = cb.dataset.id;
+      const row = document.querySelector(`tr[data-row-id="${id}"]`);
+      if (row && row.dataset.status === 'new') {
+        row.dataset.status = 'ack';
+        row.classList.remove('bg-danger-soft/10');
+        const statusCell = row.children[9];
+        statusCell.innerHTML = `
+          <div class="flex flex-col">
+            <span class="inline-flex items-center gap-xs px-space-md py-[3px] rounded-full bg-primary-soft text-primary font-label text-[12px] font-semibold w-fit">
+              <span class="material-symbols-outlined text-[14px]">check_circle</span>
+              Acknowledged
+            </span>
+            <span class="font-caption text-[11px] text-text-muted mt-[2px]">Bulk by Sup. Farai</span>
+          </div>
+        `;
+        const actionCell = row.children[10];
+        actionCell.innerHTML = `
+          <button type="button" class="h-10 px-space-md bg-surface hover:bg-surface-muted text-text rounded-lg font-label text-[13px] font-semibold flex items-center gap-xs ml-auto shadow-sm transition-colors">
+            <span class="material-symbols-outlined text-[18px] text-text-muted">folder_open</span>
+            <span>View Dossier</span>
+          </button>
+        `;
+      }
+      cb.checked = false;
+    });
+    selectAll.checked = false;
+    updateSelectionState();
+    applyFilters();
+  });
+</script></main></div></body></html>

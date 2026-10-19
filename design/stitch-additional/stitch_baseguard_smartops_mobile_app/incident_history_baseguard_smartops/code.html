@@ -1,0 +1,264 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary": "#174E42", "primary-container": "#174E42", "primary-hover": "#113F36", "primary-soft": "#E7F2EE", "navy": "#152836", "background": "#F6F8F9", "surface": "#FFFFFF", "surface-muted": "#EEF2F4", "surface-dim": "#cddce7", "text": "#17252D", "text-muted": "#556771", "border": "#D9E2E6", "danger": "#B43732", "danger-soft": "#FCEAE7", "offline": "#73549B", "offline-soft": "#F0EAF8", "warning": "#9D620A", "warning-soft": "#FFF3D6", "success": "#1B7C55", "focus": "#246FA8", "on-primary": "#FFFFFF", "on-surface": "#0f1d25", "on-surface-variant": "#404945" }, borderRadius: { "DEFAULT": "0.25rem", "sm": "0.5rem", "md": "0.75rem", "lg": "1rem", "full": "9999px" }, spacing: { "xs": "4px", "sm": "8px", "md": "12px", "base": "16px", "lg": "24px", "xl": "32px", "xxl": "40px", "margin": "1rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "space-md": "0.75rem", "space-lg": "1rem", "space-xl": "1.5rem" }, fontFamily: { "body": ["Noto Sans"], "heading-sm": ["Noto Sans"], "heading-md": ["Noto Sans"], "heading-lg": ["Noto Sans"], "label": ["Noto Sans"], "caption": ["Noto Sans"] }, fontSize: { "caption": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label": ["14px", { lineHeight: "20px", fontWeight: "600" }], "body": ["16px", { lineHeight: "24px", fontWeight: "400" }], "heading-sm": ["16px", { lineHeight: "24px", fontWeight: "700" }], "heading-md": ["20px", { lineHeight: "28px", fontWeight: "700" }], "heading-lg": ["24px", { lineHeight: "32px", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>body { min-height: max(884px, 100dvh); }</style></head><body class="bg-background font-body text-body text-text flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(21,40,54,0.06)]"><div class="h-20 px-base flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0 flex-1"><div class="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center flex-shrink-0 shadow-sm"><span class="material-symbols-outlined text-[20px]">shield</span></div><div class="flex flex-col min-w-0"><h1 class="font-heading-sm text-[16px] leading-tight font-bold text-text truncate">Incident History</h1><div class="flex items-center gap-1 text-text-muted mt-0.5"><span class="material-symbols-outlined text-[13px] text-primary flex-shrink-0">location_on</span><span class="font-caption text-[11px] truncate">Demonstration Site A</span></div></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><a class="flex items-center gap-1 px-2 py-1 rounded-full bg-offline-soft text-offline font-caption text-[11px] font-label leading-none focus:outline-none focus:ring-1 focus:ring-focus" data-path="sync-queue" href="#"><span class="w-1.5 h-1.5 rounded-full bg-offline flex-shrink-0 animate-pulse"></span><span class="whitespace-nowrap">3 Offline</span></a><a aria-label="Guard Profile and Settings" class="relative w-9 h-9 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-focus flex-shrink-0" data-path="profile" href="#"><img alt="Officer T. Moyo" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHp9B-_ccCmyvc9udTjF6whMcEd6nHIeo72VNrgWrzW8jeW9EwoaeWsFukEcWqUT65aEmxNW_s45o0ksy7VRx_LtcmfPr2JLoCfYDAo6F2xqRuzCLxyyLoAbshQX2dv3U2bplu8WMETixGD2N_t1UDs-EvkS8kqRZW77CroQak6Eb974Y4E7JJ9vJmJD5WV6RdTnOUIxL31m_q7VoTXnYYmcaD7s40iEBfBt5w5EG6I0xoC881ZAQz0w"><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-offline ring-2 ring-surface"></span></a></div></div></header><main class="flex flex-col relative w-full pt-20 pb-24 bg-background min-h-screen px-margin"><div class="flex flex-col w-full pb-6 space-y-space-md">
+<!-- Status & Incident Dispatch Action Panel -->
+<div class="flex flex-col gap-space-sm bg-surface p-space-md rounded-xl shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs text-text-muted">
+<span class="material-symbols-outlined text-[18px] text-primary">security_update_warning</span>
+<span class="font-caption text-caption uppercase tracking-wider font-label text-text-muted">Operational Queue</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-offline-soft text-offline">
+<span class="w-2 h-2 rounded-full bg-offline animate-pulse"></span>
+<span class="font-caption text-caption font-label">1 Incident Offline</span>
+</div>
+</div>
+<a class="flex items-center justify-center gap-space-sm w-full h-[52px] px-space-lg rounded-xl bg-primary text-on-primary font-label text-label active:scale-[0.98] transition-transform shadow-md focus:outline-none" data-path="report-incident" href="#">
+<span class="material-symbols-outlined text-[22px]">add_alert</span>
+<span class="">Report New Incident</span>
+</a>
+</div>
+<!-- Filter Chips (Horizontal Scrollable) -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-0.5" id="incident-filter-chips">
+<button class="filter-chip active flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-primary text-on-primary font-caption text-caption font-label shadow-sm whitespace-nowrap min-h-[36px]" data-filter="all" type="button">
+<span class="">All</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary-hover font-caption text-[10px]">4</span>
+</button>
+<button class="filter-chip flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface text-text-muted font-caption text-caption font-label whitespace-nowrap min-h-[36px]" data-filter="pending" type="button">
+<span class="">Pending Sync</span>
+<span class="px-1.5 py-0.2 rounded-full bg-offline-soft text-offline font-caption text-[10px]">1</span>
+</button>
+<button class="filter-chip flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface text-text-muted font-caption text-caption font-label whitespace-nowrap min-h-[36px]" data-filter="received" type="button">
+<span class="">Received</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-muted text-text font-caption text-[10px]">2</span>
+</button>
+<button class="filter-chip flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface text-text-muted font-caption text-caption font-label whitespace-nowrap min-h-[36px]" data-filter="acknowledged" type="button">
+<span class="">Acknowledged</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary-soft text-primary font-caption text-[10px]">1</span>
+</button>
+</div>
+<!-- Incident List Container -->
+<div class="flex flex-col space-y-space-md" id="incidents-container">
+<!-- Incident #1 (Pending Sync / Local Cache) -->
+<a class="incident-card group flex flex-col bg-surface rounded-xl overflow-hidden shadow-sm active:scale-[0.99] transition-all" data-path="incident-details-009" data-status="pending" href="#">
+<div class="h-1.5 w-full bg-offline"></div>
+<div class="p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-label text-caption font-bold text-offline tracking-wide truncate">#LOC-2026-INC-009</span>
+<span class="text-text-muted text-[10px]">•</span>
+<span class="font-caption text-caption text-text-muted">Today 13:10 CAT</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-danger-soft text-danger font-caption text-[11px] font-label shrink-0">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">error</span>
+            High
+          </span>
+</div>
+<div class="flex gap-space-md items-start">
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-heading-sm text-heading-sm text-text leading-snug group-hover:text-primary transition-colors">
+              Attempted Tamper / Scratch Marks on Storage Shed #4
+            </h3>
+<p class="font-caption text-caption text-text-muted mt-1 line-clamp-1">
+              South perimeter lock latch showing mechanical pry stress and sheared wire seal.
+            </p>
+</div>
+<div class="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-muted">
+<img class="w-full h-full object-cover" data-alt="Close up photograph showing deep mechanical scratch marks and fresh pry gouges around a padlocked industrial metal storage shed door latch in bright daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4IWiDALJ-cyHR4lXeZr1MiLigWh6SXn1FcbTUCSjXxJ-diwGkDbxPNDILBfdRR3ruNifKLPPlRCy8bPJ2lg_OjyXz6qLnh5FdZTcBrizvdFVyjipkj8oLCvn8ZfHWe_xPiluXE8qH8RZKDKo3c5VkhU1PA2N6w4etc1xARuKxoEeL4LL_R71n8jvy21rDb5p1DdCekyTn9dESoif-hJdjEPbuaIyZaDV7R7rk7g7eYV4KL-G-k04gUA">
+<div class="absolute bottom-0 inset-x-0 bg-black/60 text-white flex items-center justify-center py-0.5">
+<span class="material-symbols-outlined text-[12px]">photo_camera</span>
+<span class="text-[9px] font-label ml-0.5">2</span>
+</div>
+</div>
+</div>
+<!-- Deterministic Delivery Badge -->
+<div class="flex items-center justify-between pt-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-offline-soft text-offline font-caption text-caption font-label">
+<span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
+<span class="">Pending Sync (Saved Locally)</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</div>
+</div>
+</a>
+<!-- Incident #2 (Acknowledged by Supervisor) -->
+<a class="incident-card group flex flex-col bg-surface rounded-xl overflow-hidden shadow-sm active:scale-[0.99] transition-all" data-path="incident-details-042" data-status="acknowledged" href="#">
+<div class="h-1.5 w-full bg-primary"></div>
+<div class="p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-label text-caption font-bold text-text tracking-wide truncate">#INC-2024-042</span>
+<span class="text-text-muted text-[10px]">•</span>
+<span class="font-caption text-caption text-text-muted">23 Oct 18:04 CAT</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-danger-soft text-danger font-caption text-[11px] font-label shrink-0">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">warning</span>
+            High
+          </span>
+</div>
+<div class="flex gap-space-md items-start">
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-heading-sm text-heading-sm text-text leading-snug group-hover:text-primary transition-colors">
+              Perimeter Wire Cut (East Sector)
+            </h3>
+<p class="font-caption text-caption text-text-muted mt-1 line-clamp-1">
+              Section E-12 razor wire severed; patrol team Charlie dispatched to reinforce guard tower.
+            </p>
+</div>
+<div class="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-muted">
+<img class="w-full h-full object-cover" data-alt="Security inspection photograph depicting an industrial high security chain-link fence with fresh cut ends in sharp razor wire under dusk lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvnenWWgRuI0Lt7_uLNuZrkkByaP1CAIGD_IsS6KOHObftXahqoWjTRd1cR2rf3Yf7i9homKtWf5pw6TPgNVwMwBVCvmnOW8CFHbDBqxjJdXreVZKw1xYdTzsjVAcPrByJySR76LGYzxfGfDpMVQQZaLg16ioF0-Lk8-oLKrHFcod3A2Aqakb4QMJra8ryl4FqRIASOxKOW1V5tDmsx21bpO-ltjnnaHYfv62koea5mxezhS6uIbfx9w">
+<div class="absolute bottom-0 inset-x-0 bg-black/60 text-white flex items-center justify-center py-0.5">
+<span class="material-symbols-outlined text-[12px]">photo_camera</span>
+<span class="text-[9px] font-label ml-0.5">3</span>
+</div>
+</div>
+</div>
+<!-- Deterministic Delivery Badge -->
+<div class="flex items-center justify-between pt-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-soft text-primary font-caption text-caption font-label">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+<span class="">Acknowledged by Supervisor F. Sibanda</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</div>
+</div>
+</a>
+<!-- Incident #3 (Received by Server) -->
+<a class="incident-card group flex flex-col bg-surface rounded-xl overflow-hidden shadow-sm active:scale-[0.99] transition-all" data-path="incident-details-039" data-status="received" href="#">
+<div class="h-1.5 w-full bg-primary-container"></div>
+<div class="p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-label text-caption font-bold text-text tracking-wide truncate">#INC-2024-039</span>
+<span class="text-text-muted text-[10px]">•</span>
+<span class="font-caption text-caption text-text-muted">22 Oct 10:15 CAT</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning-soft text-warning font-caption text-[11px] font-label shrink-0">
+<span class="material-symbols-outlined text-[13px]">tune</span>
+            Medium
+          </span>
+</div>
+<div class="flex gap-space-md items-start">
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-heading-sm text-heading-sm text-text leading-snug group-hover:text-primary transition-colors">
+              Auxiliary Generator Dip / Voltage Drop
+            </h3>
+<p class="font-caption text-caption text-text-muted mt-1 line-clamp-1">
+              Backup Diesel Gen 2 dipped below 205V during automatic load switch test.
+            </p>
+</div>
+<div class="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-muted">
+<img class="w-full h-full object-cover" data-alt="High contrast utility gauge readout panel inside a backup diesel generator control enclosure displaying numerical voltage drop indicators." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaLO-1AWnJneGU-xOQ2BJJDbUcprsBbGXonY0x2whu4C1Nft0CziDqSHDnvgDycubaw1oDdGNT20Ar99J5y7-HapD0Slyz-egQPfWnLf6JHFJcuG0GKpp-s5IU8fGtXuq375eEagG_thue5Y1UQ-4A6g--OYxZz_NhM9ueuPv_V4izpiNG-jl8tGZdow_uFgnjM0qVxTuCdMgxMJ8z8fr8w0NcQfwdlFHMfi9RBHXnYnqMNxLIncZVng">
+<div class="absolute bottom-0 inset-x-0 bg-black/60 text-white flex items-center justify-center py-0.5">
+<span class="material-symbols-outlined text-[12px]">photo_camera</span>
+<span class="text-[9px] font-label ml-0.5">1</span>
+</div>
+</div>
+</div>
+<!-- Deterministic Delivery Badge -->
+<div class="flex items-center justify-between pt-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-muted text-text font-caption text-caption font-label">
+<span class="material-symbols-outlined text-[16px] text-primary">check</span>
+<span class="">Received by Server</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</div>
+</div>
+</a>
+<!-- Incident #4 (Resolved / Closed) -->
+<a class="incident-card group flex flex-col bg-surface rounded-xl overflow-hidden shadow-sm active:scale-[0.99] transition-all opacity-85" data-path="incident-details-035" data-status="received" href="#">
+<div class="h-1.5 w-full bg-surface-muted"></div>
+<div class="p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-label text-caption font-bold text-text-muted tracking-wide truncate">#INC-2024-035</span>
+<span class="text-text-muted text-[10px]">•</span>
+<span class="font-caption text-caption text-text-muted">20 Oct 08:45 CAT</span>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-muted text-text-muted font-caption text-[11px] font-label shrink-0">
+<span class="material-symbols-outlined text-[13px]">info</span>
+            Low / Advisory
+          </span>
+</div>
+<div class="flex gap-space-md items-start">
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-heading-sm text-heading-sm text-text-muted leading-snug">
+              Sensor Beam Obscured by Overgrown Grass
+            </h3>
+<p class="font-caption text-caption text-text-muted mt-1 line-clamp-1">
+              Zone 04 infrared perimeter detector false alarms cleared following grounds maintenance.
+            </p>
+</div>
+<div class="w-16 h-16 rounded-lg flex items-center justify-center bg-surface-muted text-text-muted shrink-0">
+<span class="material-symbols-outlined text-[28px]">task_alt</span>
+</div>
+</div>
+<!-- Deterministic Delivery Badge -->
+<div class="flex items-center justify-between pt-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-muted text-text-muted font-caption text-caption font-label">
+<span class="material-symbols-outlined text-[15px]">check_circle</span>
+<span class="">Closed</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[20px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</div>
+</div>
+</a>
+</div>
+<!-- End-of-List Assurance Footer -->
+<div class="flex items-center justify-center gap-1.5 pt-2 text-text-muted">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-caption text-caption">End-to-End Cryptographic Audit Log active</span>
+</div>
+</div>
+<script>
+  (function() {
+    // Interactive Tab Highlighting for the shell navigation
+    const bottomNav = document.querySelector('nav[aria-label="Bottom Navigation"]');
+    if (bottomNav) {
+      const navLinks = bottomNav.querySelectorAll('a[data-path]');
+      navLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'incidents') {
+          link.classList.add('bg-primary-soft', 'text-primary', 'font-label');
+          link.classList.remove('text-on-surface-variant');
+        } else {
+          link.classList.remove('bg-primary-soft', 'text-primary', 'font-label');
+          link.classList.add('text-on-surface-variant');
+        }
+      });
+    }
+
+    // Client-side quick filter logic
+    const filterButtons = document.querySelectorAll('.filter-chip');
+    const cards = document.querySelectorAll('.incident-card');
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => {
+          b.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm');
+          b.classList.add('bg-surface', 'text-text-muted');
+          const badge = b.querySelector('span:last-child');
+          if (badge && b.dataset.filter === 'all') {
+            badge.className = 'px-1.5 py-0.2 rounded-full bg-surface-muted text-text-muted font-caption text-[10px]';
+          }
+        });
+
+        btn.classList.remove('bg-surface', 'text-text-muted');
+        btn.classList.add('bg-primary', 'text-on-primary', 'shadow-sm');
+        const badge = btn.querySelector('span:last-child');
+        if (badge && btn.dataset.filter === 'all') {
+          badge.className = 'px-1.5 py-0.2 rounded-full bg-primary-hover text-on-primary font-caption text-[10px]';
+        }
+
+        const filter = btn.getAttribute('data-filter');
+        cards.forEach(card => {
+          if (filter === 'all' || card.getAttribute('data-status') === filter) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+  })();
+</script></main><nav aria-label="Bottom Navigation" class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_8px_rgba(21,40,54,0.06)]" data-active-classes="bg-primary-soft text-primary font-label"><div class="flex items-center justify-around h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-space-sm py-xs rounded-md text-on-surface-variant transition-colors" data-path="today" href="#"><span class="material-symbols-outlined text-[24px]">shield</span><span class="font-caption text-caption mt-xs">Today</span></a><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-space-sm py-xs rounded-md text-on-surface-variant transition-colors" data-path="occurrence-book" href="#"><span class="material-symbols-outlined text-[24px]">menu_book</span><span class="font-caption text-caption mt-xs">Occurrence Book</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-space-sm py-xs rounded-md transition-colors bg-primary-soft text-primary font-label" data-path="incidents" href="#"><span class="material-symbols-outlined text-[24px]">warning</span><span class="font-caption text-caption mt-xs">Incidents</span></a><a class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] px-space-sm py-xs rounded-md text-on-surface-variant transition-colors" data-path="handover" href="#"><span class="material-symbols-outlined text-[24px]">sync_alt</span><span class="font-caption text-caption mt-xs">Handover</span></a></div></nav>
+
+</body></html>
