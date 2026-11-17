@@ -10,3 +10,14 @@ build/
 *.keystore
 *.jks
 .DS_Store
+
+# Expo / React Native generated files
+**/node_modules/
+**/.expo/
+**/.env
+**/.env.*
+!**/.env.example
+**/.gradle/
+**/android/**/build/
+**/ios/Pods/
+**/dist/

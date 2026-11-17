@@ -1,12 +1,31 @@
 {
- "expo": {
-  "name":"Baseguard SmartOps",
-  "slug":"baseguard-smartops-guard",
-  "scheme":"baseguard-smartops",
-  "version":"0.1.0",
-  "orientation":"portrait",
-  "userInterfaceStyle":"light",
-  "android":{"package":"zw.baseguard.smartops.guard", "versionCode":1, "permissions":[], "softwareKeyboardLayoutMode":"resize"},
-  "plugins":[["expo-sqlite",{"useSQLCipher":true}],"expo-secure-store"]
- }
+  "expo": {
+    "name": "Baseguard SmartOps",
+    "slug": "baseguard-smartops-guard",
+    "scheme": "baseguard-smartops",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "zw.baseguard.smartops.guard",
+      "versionCode": 1,
+      "permissions": [],
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "plugins": [
+      [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
+      ],
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ceea0a26-c6b5-4d55-b8dd-04bc17c1bfa1"
+      }
+    }
+  }
 }

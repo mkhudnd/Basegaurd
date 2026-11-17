@@ -52,3 +52,24 @@ This is a proposed pilot, not production acceptance. No production database or Z
 An installable debug APK was subsequently built with `arm64-v8a` and `x86_64` native libraries using the ignored generated Android checkout: `gradlew assembleDebug --no-daemon -PnewArchEnabled=false -PreactNativeArchitectures=arm64-v8a,x86_64`. Gradle finished successfully (261 actionable tasks: 22 executed, 239 up to date). The 130,105,983-byte APK is `apps/guard/android/app/build/outputs/apk/debug/app-debug.apk`, SHA-256 `C780FFBDD679AE37E688FEB9459FEEB949210C1AF0F0F7109702B6CE51D8F284`. APK signature verification passed with the Android debug certificate. Both ABIs contain `libexpo-sqlite.so` and `libcrypto.so`; the generated build retains `expo.sqlite.useSQLCipher=true`.
 
 This is a debug app that needs Metro and an isolated test `.env` to load the JavaScript and reach Supabase. `expo-dev-client` was not installed because the package download could not complete in this environment; there is no development-client QR launcher in this APK. No Android device was attached for installation or runtime testing. The APK is generated and ignored by Git, not a production or offline standalone release.
+
+## Repository consolidation follow-up — 2026-11-17
+
+The validated fixes from reference commits `1872a9b` and `33523a5` were compared with the target rather than cherry-picked. The target's newer UI and service wiring were retained. Missing pieces were integrated: the Node 20-compatible `tsx` test runner, Expo SDK 54 font/icon pins, login and supervisor TypeScript fixes, and regression coverage for occurrence timestamps. The occurrence flow keeps the guard-selected event time through domain validation, the encrypted SQLite outbox and the `submit_ob_entry` `p_event_at` argument.
+
+Current verification on Node 20.19.4:
+
+| Check | Result |
+|---|---|
+| `npm ci` | Passed: 737 packages installed. npm reported 20 audit findings (17 moderate, 3 high); no broad or forced dependency update was applied. |
+| Guard tests | Passed: 26 tests, 0 failures. |
+| Guard TypeScript | Passed: `npm run typecheck`. |
+| Prototype tests | Passed: 4 tests, 0 failures. |
+| Static security/offline check | Passed: 11 RLS tables, 3 restricted RPCs, SQLCipher/outbox and emergency-warning markers. This remains a source check, not a database test. |
+| Expo compatibility | `npx expo install --check` reported dependencies up to date using the local SDK map. Network validation was unavailable, so Expo correctly warned that the offline result is less reliable. |
+| Android production JS export | Passed: 774 modules and a 2.86 MB Hermes bundle. |
+| Native Android build | Passed: `:app:assembleDebug`, 362 actionable tasks, all four configured ABIs, new architecture enabled. APK size is 172,356,265 bytes; SHA-256 is `075CBAF79F2DF3DBB718ADB36171C1B1497BEF9E129DF1E1D79BBD82A3CF6BDB`. |
+| SQLCipher packaging | APK contains `libexpo-sqlite.so` and `libcrypto.so` for arm64-v8a, armeabi-v7a, x86 and x86_64. `expo.sqlite.useSQLCipher=true` remains in the generated native configuration. |
+| Emulator runtime | Passed at the unauthenticated boundary: the debug APK installed on the local Pixel 7a AVD, connected to Metro, launched `MainActivity`, and rendered the Baseguard sign-in UI without a fatal JavaScript or native exception. Title, work-email, password and sign-in controls were present at 360, 393 and 412 dp test widths. |
+
+The connected physical phone already had the same package name signed with a different key, so Android rejected the non-destructive update with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. The existing phone app was not uninstalled and its data was not touched. No credentials were entered on the emulator. Consequently, authenticated guard/supervisor navigation, actual SQLCipher database opening and restart persistence, Supabase Auth/RLS/RPC behavior, outbox delivery and supervisor acknowledgement still require an isolated test project and authorized test accounts. No live database migration or Edge Function deployment was performed.

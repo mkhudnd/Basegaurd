@@ -37,7 +37,8 @@ shown as unavailable because the guard app does not yet fetch server follow-up s
 1. In `apps/guard`, copy `.env.example` to `.env` and set the URL and **publishable**
    key of an isolated Supabase test project with fictional guard, site, assignment,
    and shift data. Do not use a service-role key.
-2. Use Node 24 for the built-in TypeScript test runner. Run `npm install`,
+2. Use Node 20 or newer; the test script uses `tsx` to load TypeScript modules.
+   Run `npm ci`,
    `npx expo install --check`, `npm run typecheck`, and `npm test`. Resolve any
    Expo compatibility suggestions before building.
 3. Run `npx expo run:android` with Android Studio or a USB-connected phone.
