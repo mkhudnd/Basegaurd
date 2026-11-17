@@ -1,7 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {BackHandler,Image,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
+import {BackHandler,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {BottomNavBar,COLORS,FONTS,InfoAlertBanner,SmartButton,type GuardTabKey} from '../components';
+import {BottomNavBar,COLORS,FONTS,InfoAlertBanner,ScreenHeader,SmartButton,type GuardTabKey} from '../components';
 import {localDateTime,parseLocalDateTime} from '../incident-domain';
 import {OB_CHOICES,composeObNarrative,emptyObFields,filterObRows,obDateKey,obTimeKey,obTitle,type ObCategory,type ObFieldValues,type ObRow} from '../occurrence-ui';
 
@@ -58,10 +58,7 @@ export const OccurrenceBookScreen:React.FC<OccurrenceBookScreenProps>=({
  const filters:[typeof filter,string][]=[['all','All'],['pending','Pending Sync'],['received','Received'],['today','Today']];
  return <View style={styles.root}>
   {formCategory ? <>
-    <View style={styles.formHeader}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Back to occurrence book" onPress={cancelForm} style={styles.backHit}><Ionicons name="arrow-back" size={23} color={COLORS.navy}/></Pressable>
-      <Text style={styles.formTitle}>{obTitle(formCategory)} Entry</Text>
-    </View>
+    <ScreenHeader title="New OB Entry" subtitle={obTitle(formCategory)} onBack={cancelForm} backAccessibilityLabel="Back to occurrence book"/>
     <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>
       <ScrollView style={{flex:1}} contentContainerStyle={styles.formBody} keyboardShouldPersistTaps="handled">
         <View style={styles.contextStrip}><Ionicons name={icon(OB_CHOICES.find(c=>c.category===formCategory)?.icon??'document-outline')} size={21} color={COLORS.primary}/>
@@ -100,10 +97,9 @@ export const OccurrenceBookScreen:React.FC<OccurrenceBookScreenProps>=({
       </ScrollView>
     </KeyboardAvoidingView>
   </>:<>
-    <View style={styles.header}>
-      <View style={styles.brand}><Image source={require('../../assets/brand-shield.png')} resizeMode="contain" style={styles.logo}/><Text numberOfLines={1} style={styles.brandText}><Text style={{fontFamily:FONTS.bold}}>Baseguard </Text>SmartOps</Text></View>
-      <Pressable accessibilityRole="button" onPress={onOpenDuty} style={styles.dutyPill}><View style={styles.greenDot}/><Text style={styles.dutyText} numberOfLines={1}>{dutyStatus}</Text><Ionicons name="chevron-down" size={15} color={COLORS.primary}/></Pressable>
-    </View>
+    <ScreenHeader title="Occurrence Book" rightAction={<Pressable accessibilityRole="button" accessibilityLabel={`Duty status: ${dutyStatus}`} onPress={onOpenDuty} style={styles.headerDutyButton}>
+      <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.white}/>
+    </Pressable>}/>
     <ScrollView style={{flex:1}} contentContainerStyle={styles.listBody} keyboardShouldPersistTaps="handled">
       <View style={styles.heading}><Text style={styles.pageTitle}>Occurrence Book</Text><Text style={styles.subtitle}>Log patrols, visitors and daily events.</Text></View>
       {!isOnline?<InfoAlertBanner tone="offline" title="You're offline" body="You can view records on this phone and save new entries. Remote records will be available when you reconnect."/>:null}
@@ -144,7 +140,7 @@ export const OccurrenceBookScreen:React.FC<OccurrenceBookScreenProps>=({
     </View>
   </Modal>
   <Modal visible={!!details} animationType="slide" onRequestClose={()=>setDetails(null)}>
-    <View style={styles.root}><View style={styles.detailHeader}><Pressable onPress={()=>setDetails(null)} accessibilityRole="button" accessibilityLabel="Back"><Ionicons name="arrow-back" size={24} color={COLORS.navy}/></Pressable><Text style={styles.formTitle}>Entry Details</Text></View>
+    <View style={styles.root}><ScreenHeader title="Entry Details" onBack={()=>setDetails(null)}/>
       {details?<ScrollView contentContainerStyle={styles.formBody}>
         <View style={styles.detailCard}><Text style={styles.entryTitle}>{obTitle(details.category)}</Text><Text style={styles.entryTime}>{formatDate(details.eventAt)}</Text><View style={[styles.statusChip,{backgroundColor:statusInfo(details.status).bg,alignSelf:'flex-start',marginTop:12}]}><Text style={[styles.statusText,{color:statusInfo(details.status).fg}]}>{statusInfo(details.status).name}</Text></View></View>
         <Text style={styles.fieldLabel}>Original occurrence narrative</Text><Text selectable style={styles.detailNarrative}>{details.narrative}</Text>
@@ -164,9 +160,8 @@ function Field({label,value,onChange,placeholder,multiline=false}:{label:string;
 }
 
 const styles=StyleSheet.create({
- root:{flex:1,backgroundColor:COLORS.surface},header:{height:80,paddingHorizontal:16,backgroundColor:COLORS.surface,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10},
- brand:{flexDirection:'row',alignItems:'center',flex:1,minWidth:0,gap:8},logo:{width:35,height:40},brandText:{color:COLORS.navy,fontSize:16,flexShrink:1,fontFamily:FONTS.regular},
- dutyPill:{backgroundColor:COLORS.background,borderRadius:28,paddingHorizontal:11,height:43,flexDirection:'row',gap:7,alignItems:'center'},greenDot:{width:9,height:9,borderRadius:6,backgroundColor:COLORS.success},dutyText:{fontSize:12,color:COLORS.primary,flexShrink:1},
+ root:{flex:1,backgroundColor:COLORS.surface},
+ headerDutyButton:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center'},
  listBody:{paddingHorizontal:17,paddingBottom:24,gap:12},heading:{marginBottom:4},pageTitle:{fontSize:26,fontFamily:FONTS.bold,color:COLORS.navy},subtitle:{fontSize:13,color:COLORS.textMuted,lineHeight:20},
  searchRow:{borderWidth:1,borderColor:COLORS.border,borderRadius:12,minHeight:48,paddingLeft:12,flexDirection:'row',alignItems:'center',gap:10},searchInput:{flex:1,color:COLORS.text,fontSize:14,paddingVertical:5},refresh:{width:48,height:48,alignItems:'center',justifyContent:'center',borderLeftWidth:1,borderLeftColor:COLORS.border},
  chips:{gap:7,paddingVertical:2},chip:{backgroundColor:COLORS.background,borderRadius:24,paddingVertical:10,paddingHorizontal:14,minHeight:48,justifyContent:'center'},chipActive:{backgroundColor:COLORS.primary},chipText:{fontSize:12,color:COLORS.textMuted},chipTextActive:{color:COLORS.white,fontFamily:FONTS.bold},
@@ -174,8 +169,8 @@ const styles=StyleSheet.create({
  sectionRow:{marginTop:5,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:7},sectionTitle:{fontSize:16,fontFamily:FONTS.bold,color:COLORS.navy},queueLink:{fontSize:12,color:COLORS.primary},
  entryCard:{flexDirection:'row',alignItems:'center',borderRadius:14,borderWidth:1,borderColor:COLORS.border,backgroundColor:COLORS.white,paddingHorizontal:11,paddingVertical:12,gap:10,minHeight:92},entryIcon:{width:42,height:42,borderRadius:24,backgroundColor:COLORS.primarySoft,alignItems:'center',justifyContent:'center'},entryTitle:{fontSize:14,color:COLORS.navy,fontFamily:FONTS.bold},entryExcerpt:{fontSize:12,color:COLORS.textMuted,lineHeight:19,marginTop:2},entryTime:{fontSize:11,color:COLORS.textMuted,marginTop:5},rightColumn:{alignItems:'flex-end',gap:11},statusChip:{borderRadius:15,paddingHorizontal:8,paddingVertical:5},statusText:{fontSize:10,fontFamily:FONTS.medium},
  emptyCard:{marginTop:10,alignItems:'center',borderWidth:1,borderColor:COLORS.border,borderRadius:14,padding:28,gap:10},emptyTitle:{fontSize:16,fontFamily:FONTS.bold,color:COLORS.navy},emptyBody:{textAlign:'center',color:COLORS.textMuted,fontSize:12,lineHeight:18},footnote:{fontSize:11,lineHeight:17,color:COLORS.textMuted},
- formHeader:{height:59,borderBottomWidth:1,borderBottomColor:COLORS.border,flexDirection:'row',alignItems:'center',gap:14,paddingHorizontal:15},backHit:{height:48,width:34,alignItems:'center',justifyContent:'center'},formTitle:{fontSize:19,fontFamily:FONTS.bold,color:COLORS.navy},formBody:{padding:16,gap:14,paddingBottom:38},contextStrip:{backgroundColor:COLORS.primarySoft,flexDirection:'row',alignItems:'center',gap:10,padding:13,borderRadius:13},contextText:{fontSize:12,lineHeight:18,color:COLORS.primary,flex:1},
+ formBody:{padding:16,gap:14,paddingBottom:38},contextStrip:{backgroundColor:COLORS.primarySoft,flexDirection:'row',alignItems:'center',gap:10,padding:13,borderRadius:13},contextText:{fontSize:12,lineHeight:18,color:COLORS.primary,flex:1},
  fieldLabel:{fontSize:13,fontFamily:FONTS.bold,color:COLORS.navy},inputRow:{flexDirection:'row',gap:10},input:{borderColor:COLORS.border,borderWidth:1,borderRadius:11,paddingHorizontal:12,minHeight:48,color:COLORS.text,fontSize:14,backgroundColor:COLORS.white},textArea:{height:120,paddingTop:12},notice:{flexDirection:'row',gap:10,backgroundColor:'#F0F6FA',padding:13,borderRadius:12},noticeText:{fontSize:12,lineHeight:19,color:COLORS.textMuted,flex:1},
  modalBackdrop:{flex:1,backgroundColor:'rgba(15,30,34,0.5)',justifyContent:'flex-end'},sheet:{backgroundColor:COLORS.white,borderTopLeftRadius:24,borderTopRightRadius:24,paddingHorizontal:16,paddingTop:12,paddingBottom:28,gap:9},sheetHandle:{height:4,width:46,backgroundColor:COLORS.border,borderRadius:2,alignSelf:'center',marginBottom:8},sheetHead:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8},sheetTitle:{fontFamily:FONTS.bold,color:COLORS.navy,fontSize:20},closeHit:{height:48,width:48,alignItems:'center',justifyContent:'center'},choiceRow:{borderWidth:1,borderColor:COLORS.border,borderRadius:13,flexDirection:'row',alignItems:'center',padding:11,minHeight:66,gap:13},choiceIcon:{width:41,height:41,borderRadius:24,backgroundColor:COLORS.primarySoft,alignItems:'center',justifyContent:'center'},choiceTitle:{fontSize:14,fontFamily:FONTS.bold,color:COLORS.navy},choiceHint:{fontSize:11,color:COLORS.textMuted,marginTop:3},
- detailHeader:{height:64,flexDirection:'row',alignItems:'center',gap:15,paddingHorizontal:18,borderBottomWidth:1,borderBottomColor:COLORS.border},detailCard:{padding:18,borderRadius:14,backgroundColor:COLORS.background},detailNarrative:{fontSize:15,color:COLORS.text,lineHeight:24,backgroundColor:COLORS.background,padding:15,borderRadius:13},
+ detailCard:{padding:18,borderRadius:14,backgroundColor:COLORS.background},detailNarrative:{fontSize:15,color:COLORS.text,lineHeight:24,backgroundColor:COLORS.background,padding:15,borderRadius:13},
 });

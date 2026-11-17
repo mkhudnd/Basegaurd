@@ -7,7 +7,7 @@ import {
 import {Ionicons} from '@expo/vector-icons';
 
 const COLORS = {
-  green: '#174E42', navy: '#152836', surface: '#FFFFFF', muted: '#748498',
+  green: '#075638', navy: '#152836', surface: '#FFFFFF', muted: '#748498',
   bg: '#F6F8F9', outline: '#D7DFE6', error: '#A22D2D',
 };
 
@@ -54,7 +54,7 @@ export function LoginScreen({onSignIn, onForgotPassword, error, busy = false}: L
         if (Math.abs(measured - layoutHeight) > 2) setLayoutHeight(measured);
       }}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg}/>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.green}/>
       <View style={[styles.content, compact && styles.contentCompact, keyboardLayout && styles.contentKeyboard]}>
         {keyboardLayout ? (
           <Text style={styles.keyboardTitle}>Baseguard <Text style={styles.green}>SmartOps</Text></Text>
@@ -66,8 +66,8 @@ export function LoginScreen({onSignIn, onForgotPassword, error, busy = false}: L
               style={[styles.shield, compact && styles.shieldCompact, veryCompact && styles.shieldSmall]}
               accessibilityLabel="Baseguard SmartOps shield"
             />
-            <Text style={[styles.brand, compact && styles.brandCompact, narrow && styles.brandNarrow]} numberOfLines={1}>
-              <Text style={styles.navy}>Baseguard</Text><Text style={styles.green}> SmartOps</Text>
+            <Text style={[styles.brand, compact && styles.brandCompact, narrow && styles.brandNarrow]} numberOfLines={2}>
+              Baseguard{`\n`}SmartOps
             </Text>
             <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>Security Operations Platform</Text>
             {!veryCompact && <>
@@ -161,30 +161,30 @@ export function LoginScreen({onSignIn, onForgotPassword, error, busy = false}: L
 
 const styles = StyleSheet.create({
   page: {flex: 1, backgroundColor: COLORS.bg},
-  content: {flex: 1, paddingHorizontal: 19, paddingTop: 16, justifyContent: 'space-between'},
-  contentCompact: {paddingTop: 7, paddingHorizontal: 15},
+  content: {flex: 1, paddingHorizontal: 19, paddingTop: 0, justifyContent: 'flex-start'},
+  contentCompact: {paddingTop: 0, paddingHorizontal: 15},
   contentKeyboard: {paddingTop: 5, paddingBottom: 7, justifyContent: 'center', gap: 8},
-  header: {alignItems: 'center', marginBottom: 8},
-  headerCompact: {marginBottom: 4},
-  shield: {width: 92, height: 95, marginBottom: 2},
+  header: {alignItems: 'center', marginHorizontal:-19, marginBottom: 8, paddingTop:14, paddingBottom:16, backgroundColor:COLORS.green, borderBottomLeftRadius:34, borderBottomRightRadius:34},
+  headerCompact: {marginHorizontal:-15, marginBottom:4, paddingTop:8, paddingBottom:10},
+  shield: {width: 76, height: 78, marginBottom: 3, borderRadius:12},
   shieldCompact: {width: 69, height: 73, marginBottom: 0},
   shieldSmall: {width: 52, height: 56},
-  brand: {fontWeight: '800', fontSize: 27, letterSpacing: -0.7, textAlign: 'center'},
-  brandCompact: {fontSize: 23}, brandNarrow: {fontSize: 21},
+  brand: {fontWeight: '800', fontSize: 27, lineHeight:29, letterSpacing: -0.7, textAlign: 'center',color:'#FFFFFF'},
+  brandCompact: {fontSize: 23,lineHeight:25}, brandNarrow: {fontSize: 21,lineHeight:23},
   navy: {color: COLORS.navy}, green: {color: COLORS.green},
-  subtitle: {color: '#5D6C80', fontSize: 13, letterSpacing: 1.4, marginTop: 4, textAlign: 'center'},
+  subtitle: {color: '#D8EEE6', fontSize: 13, letterSpacing: 1.4, marginTop: 4, textAlign: 'center'},
   subtitleCompact: {fontSize: 11, marginTop: 1, letterSpacing: 1},
   smallBars: {flexDirection: 'row', gap: 7, marginTop: 12, marginBottom: 10},
   smallBarsCompact: {marginTop: 5, marginBottom: 5},
-  barMuted: {width: 26, height: 3, borderRadius: 8, backgroundColor: '#CCD4DB'},
-  barActive: {width: 33, height: 3, borderRadius: 8, backgroundColor: COLORS.green},
-  tagline: {color: '#8190A2', fontSize: 9, letterSpacing: 1.6, textAlign: 'center'},
+  barMuted: {width: 26, height: 3, borderRadius: 8, backgroundColor: '#FFFFFF70'},
+  barActive: {width: 33, height: 3, borderRadius: 8, backgroundColor: '#FFFFFF'},
+  tagline: {color: '#D8EEE6', fontSize: 9, letterSpacing: 1.6, textAlign: 'center'},
   taglineNarrow: {fontSize: 8, letterSpacing: 1},
   keyboardTitle: {fontSize: 19, color: COLORS.navy, textAlign: 'center', fontWeight: '800'},
   card: {
     backgroundColor: COLORS.surface, borderRadius: 17, paddingHorizontal: 18,
     paddingVertical: 18, shadowColor: COLORS.navy, shadowOpacity: 0.06,
-    shadowRadius: 14, elevation: 2,
+    shadowRadius: 14, elevation: 2, marginTop: 14,
   },
   cardCompact: {paddingHorizontal: 15, paddingVertical: 11, borderRadius: 14},
   cardKeyboard: {paddingVertical: 9},
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   dividerText: {color: COLORS.navy, fontSize: 11, fontWeight: '700'},
   disclaimer: {fontSize: 11, color: '#7C8A9C', textAlign: 'center', lineHeight: 16},
   error: {color: COLORS.error, fontSize: 13, marginBottom: 9},
-  bottomArea: {height: 99, justifyContent: 'flex-end', marginHorizontal: -19},
+  bottomArea: {height: 99, justifyContent: 'flex-end', marginHorizontal: -19, marginTop:'auto'},
   bottomCompact: {height: 55, marginHorizontal: -15},
   landscape: {position: 'absolute', left: 0, right: 0, bottom: 44, height: 80, opacity: 0.43},
   landscapeCompact: {height: 55, bottom: 39},

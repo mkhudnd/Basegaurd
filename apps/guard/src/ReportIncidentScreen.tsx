@@ -11,13 +11,13 @@ import {
   View,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { EmergencyEscalationBanner } from './components';
+import { EmergencyEscalationBanner, ScreenHeader } from './components';
 
 /**
  * Exact Stitch Tailwind Config Tokens from report_incident/code.html
  */
 const STITCH = {
-  primary: '#174E42',
+  primary: '#075638',
   primaryHover: '#113F36',
   primarySoft: '#E7F2EE',
   navy: '#152836',
@@ -394,62 +394,21 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* STITCH HEADER */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Go Back"
-            onPress={handleConfirmDiscard}
-            style={({ pressed }) => [
-              styles.backButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <MaterialIcons name="arrow-back" size={22} color={STITCH.text} />
-            <Text style={styles.backButtonText}>Back</Text>
-          </Pressable>
-
-          <View style={styles.headerTitles}>
-            <Text numberOfLines={1} style={styles.headerTitle}>
-              Report Incident
-            </Text>
-            <Text numberOfLines={1} style={styles.headerSubtitle}>
-              {resolvedSiteName}
-            </Text>
-          </View>
-        </View>
-
-        <Pressable
+      <ScreenHeader
+        title="Report Incident"
+        subtitle={resolvedSiteName}
+        onBack={handleConfirmDiscard}
+        rightAction={<Pressable
           accessibilityRole="button"
+          accessibilityLabel={isOnline ? `${pendingCount} queued reports, online` : `${pendingCount} queued reports, offline`}
           disabled={!onOpenSyncQueue}
           onPress={onOpenSyncQueue}
-          style={[
-            styles.headerQueuePill,
-            isOnline ? styles.onlineSoftBg : styles.offlineSoftBg,
-          ]}
+          style={styles.headerQueueButton}
         >
-          <View
-            style={[
-              styles.dot,
-              { backgroundColor: isOnline ? STITCH.success : STITCH.offline },
-            ]}
-          />
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.headerQueuePillText,
-              { color: isOnline ? STITCH.success : STITCH.offline },
-            ]}
-          >
-            {isOnline
-              ? pendingCount > 0
-                ? `Online (${pendingCount} queued)`
-                : 'Online'
-              : `Offline (${pendingCount} queued)`}
-          </Text>
-        </Pressable>
-      </View>
+          <MaterialIcons name={isOnline ? 'cloud-done' : 'cloud-off'} size={21} color={STITCH.white}/>
+          {pendingCount>0?<View style={styles.headerQueueBadge}><Text style={styles.headerQueueBadgeText}>{pendingCount}</Text></View>:null}
+        </Pressable>}
+      />
 
       {/* MAIN SCROLLABLE FORM */}
       <ScrollView
@@ -1016,65 +975,30 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  header: {
-    height: 64,
-    paddingHorizontal: 16,
-    backgroundColor: STITCH.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: STITCH.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flex: 1,
-    minWidth: 0,
-  },
-  backButton: {
-    minWidth: 48,
-    minHeight: 48,
-    paddingHorizontal: 6,
-    borderRadius: 8,
-    flexDirection: 'row',
+  headerQueueButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
   },
-  backButtonText: {
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
-    color: STITCH.text,
-  },
-  headerTitles: {
-    flex: 1,
-    minWidth: 0,
-  },
-  headerTitle: {
-    fontSize: 16,
-    lineHeight: 21,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    color: STITCH.text,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontFamily: FONTS.regular,
-    color: STITCH.textMuted,
-  },
-  headerQueuePill: {
-    minHeight: 40,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    flexDirection: 'row',
+  headerQueueBadge: {
+    position: 'absolute',
+    right: 2,
+    top: 5,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: STITCH.danger,
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+  },
+  headerQueueBadgeText: {
+    color: STITCH.white,
+    fontFamily: FONTS.bold,
+    fontSize: 9,
+    lineHeight: 12,
   },
   offlineSoftBg: {
     backgroundColor: STITCH.offlineSoft,
@@ -1086,11 +1010,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  headerQueuePillText: {
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
   },
   scrollContent: {
     padding: 16,

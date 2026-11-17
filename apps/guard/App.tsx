@@ -294,7 +294,8 @@ function InnerApp(){
  if(authLoading||connection===null||(session && roleState==='loading' && !authFlow))
   return <View style={styles.loading}><ActivityIndicator color={COLORS.primary}/></View>;
  return <View style={[styles.root,{paddingTop:insets.top,paddingBottom:insets.bottom}]}>
-  <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface}/>
+  <StatusBar barStyle="light-content" backgroundColor={COLORS.primary}/>
+  <View pointerEvents="none" style={[styles.topSafe,{height:insets.top}]}/>
   {authFlow && session ? <SetPasswordScreen flow={authFlow} onComplete={()=>{setAuthFlow(null);setAuthLinkError('');}}/>:
    !session ? <AuthEntry errorFromLink={authLinkError}/>:
    roleState==='error' ? <View style={styles.accessDenied}>
@@ -392,8 +393,8 @@ function InnerApp(){
 export default function App(){return <SafeAreaProvider><InnerApp/></SafeAreaProvider>;}
 
 const styles=StyleSheet.create({
- root:{flex:1,backgroundColor:COLORS.background},loading:{flex:1,alignItems:'center',justifyContent:'center'},
- accessDenied:{flex:1,justifyContent:'center',padding:24,gap:17},
+ root:{flex:1,backgroundColor:COLORS.background},topSafe:{position:'absolute',top:0,left:0,right:0,backgroundColor:COLORS.primary},loading:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:COLORS.background},
+ accessDenied:{flex:1,justifyContent:'center',padding:24,gap:17,backgroundColor:COLORS.background},
  panel:{flex:1,backgroundColor:COLORS.background},panelContent:{padding:16,paddingBottom:28,gap:12},
  title:{fontSize:20,lineHeight:27,fontFamily:FONTS.bold,fontWeight:'700',color:COLORS.navy},
  body:{fontSize:15,lineHeight:22,fontFamily:FONTS.regular,color:COLORS.text},

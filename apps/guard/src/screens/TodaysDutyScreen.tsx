@@ -1,12 +1,12 @@
 import React, {useEffect,useState} from 'react';
 import {
-  ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet,
+  ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet,
   Text, View,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BottomNavBar, COLORS, type DeliveryStatus, FONTS,
+  BottomNavBar, COLORS, type DeliveryStatus, FONTS, HomeHeader,
   formatTimestamp, type GuardTabKey, InfoAlertBanner,
 } from '../components';
 import {
@@ -153,32 +153,23 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
   };
 
   return <View style={styles.root}>
-    <View style={styles.header}>
-      <View style={styles.brandRow}>
-        <Image source={require('../../assets/brand-shield.png')} resizeMode="contain" style={styles.logo}/>
-        <Text numberOfLines={1} style={styles.brandName}><Text style={styles.brandHeavy}>Baseguard </Text>SmartOps</Text>
-      </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Duty status: ${statusLabel}. Open duty controls`}
+    <HomeHeader
+      greeting="Good day, Officer"
+      name={firstName}
+      subtitle="Stay alert. Stay safe."
+      brandAction={<Pressable accessibilityRole="button" accessibilityLabel="View shift details"
+        onPress={()=>{setSheetMode('details');setMenuOpen(true);}} style={({pressed})=>[styles.headerAction,pressed&&styles.pressed]}>
+        <Symbol name="person-circle-outline" color={COLORS.white} size={27}/>
+      </Pressable>}
+      contextAction={<Pressable accessibilityRole="button" accessibilityLabel={`Duty status: ${statusLabel}. Open duty controls`}
         accessibilityState={{expanded:menuOpen}} onPress={()=>{setSheetMode('status');setMenuOpen(true);}}
         style={({pressed})=>[styles.dutyPill,onBreak&&styles.dutyPillBreak,pressed&&styles.pressed]}>
         {isUpdatingPresence?<ActivityIndicator size="small" color={COLORS.primary}/>:<View style={[styles.statusDot,{backgroundColor:dotColor}]}/>}
         <Text style={[styles.dutyPillLabel,onBreak&&styles.dutyPillBreakText]} numberOfLines={1}>{isUpdatingPresence?'Updating…':statusLabel}</Text>
         <Symbol name="chevron-down-outline" color={COLORS.primary} size={17}/>
-      </Pressable>
-    </View>
+      </Pressable>}
+    />
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
-      <View style={styles.greetingRow}>
-        <View style={styles.greetingText}>
-          <Text style={styles.greeting}>Good day, Officer</Text>
-          <Text style={styles.personName} numberOfLines={1}>{firstName}</Text>
-          <Text style={styles.welcomeNote}>Stay alert. Stay safe.</Text>
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="View shift details"
-          onPress={()=>{setSheetMode('details');setMenuOpen(true);}} style={styles.avatar}>
-          <Symbol name="person-outline" color={COLORS.navy} size={24}/>
-        </Pressable>
-      </View>
-
       {dutyError?<InfoAlertBanner tone="danger" title="Duty status needs attention" body={dutyError}/>:null}
       {notice?<InfoAlertBanner tone="warning" title="Action needs attention" body={notice}/>:null}
 
@@ -363,20 +354,12 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
 
 const styles=StyleSheet.create({
   root:{flex:1,backgroundColor:COLORS.surface},
-  header:{minHeight:62,paddingHorizontal:16,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8,backgroundColor:COLORS.surface},
-  brandRow:{flexDirection:'row',alignItems:'center',flex:1,minWidth:0,gap:6},
-  logo:{width:36,height:39},brandName:{fontSize:18,fontFamily:FONTS.regular,color:COLORS.navy,flexShrink:1},
-  brandHeavy:{fontFamily:FONTS.bold,fontWeight:'700'},
   dutyPill:{flexDirection:'row',minHeight:44,alignItems:'center',gap:7,paddingHorizontal:11,borderRadius:18,backgroundColor:'#F2F5F6',maxWidth:160},
   dutyPillLabel:{fontFamily:FONTS.medium,color:COLORS.primary,fontSize:12,fontWeight:'600'},
   dutyPillBreak:{backgroundColor:'#FFF0D4'},dutyPillBreakText:{color:COLORS.warning},
   statusDot:{height:10,width:10,borderRadius:5},
-  scroll:{flex:1},scrollBody:{paddingHorizontal:16,paddingBottom:24},
-  greetingRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:9,marginBottom:17},
-  greetingText:{flex:1,minWidth:0},greeting:{fontFamily:FONTS.regular,fontSize:14,color:COLORS.textMuted},
-  personName:{fontFamily:FONTS.bold,fontWeight:'700',fontSize:26,color:COLORS.navy,lineHeight:34},
-  welcomeNote:{fontSize:13,color:COLORS.textMuted,fontFamily:FONTS.regular},
-  avatar:{height:46,width:46,backgroundColor:'#EDF1F3',borderRadius:23,alignItems:'center',justifyContent:'center'},
+  headerAction:{width:48,height:48,alignItems:'center',justifyContent:'center',borderRadius:24},
+  scroll:{flex:1},scrollBody:{paddingHorizontal:16,paddingTop:12,paddingBottom:24},
   assignmentCard:{backgroundColor:'#F3F6F6',borderLeftWidth:4,borderLeftColor:COLORS.primary,borderRadius:14,padding:15,marginBottom:10},
   assignmentCardOnBreak:{borderLeftColor:COLORS.warning,backgroundColor:'#FAF8F2'},
   assignmentHead:{flexDirection:'row',gap:9,alignItems:'center'},

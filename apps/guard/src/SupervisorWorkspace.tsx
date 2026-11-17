@@ -1,11 +1,12 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  ActivityIndicator, Alert, AppState, BackHandler, Image, Modal, Pressable,
-  ScrollView, StatusBar, StyleSheet, Text, View, useWindowDimensions,
+  ActivityIndicator, Alert, AppState, BackHandler, Modal, Pressable,
+  ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {supabase} from './api';
 import {InviteGuardScreen} from './auth/InviteGuardScreen';
+import {COLORS,HomeHeader,ScreenHeader} from './components';
 import {countSupervisorOverview} from './supervisor-overview';
 
 /* Site information comes from an RLS-filtered Supabase query, NOT locally held guard records. */
@@ -32,7 +33,7 @@ type Page = 'Home'|'Incidents'|'Guards'|'Sites'|'More'|'Shifts'|'OB'|'Handovers'
 type LoadState = 'loading'|'ready'|'error';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 const ALL_SITES='all';
-const GREEN='#174E42';
+const GREEN=COLORS.primary;
 const NAVY='#152836';
 const BG='#F6F8F9';
 const RED='#B43732';
@@ -254,41 +255,30 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
   const bottomTabSize=width<380?10:11;
 
   return <View style={styles.screen}>
-    <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF"/>
-    <View style={styles.header}>
-      <View style={styles.brandRow}>
-        <Image source={require('../assets/brand-shield.png')} style={styles.brandLogo} resizeMode="contain"/>
-        <Text style={styles.brand} numberOfLines={1}><Text style={styles.brandBold}>Baseguard </Text>SmartOps</Text>
-      </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Account and additional options"
-        onPress={()=>navigate('More')} style={({pressed})=>[styles.headerAvatar,pressed&&styles.pressed]}>
-        <Icon name="person-outline" color={NAVY} size={22}/>
-      </Pressable>
-    </View>
+    {page==='Home'?<HomeHeader
+      greeting="Good day, Supervisor"
+      name={greetingName}
+      subtitle="Here’s what needs attention today."
+      brandAction={<Pressable accessibilityRole="button" accessibilityLabel="Account and additional options"
+        onPress={()=>navigate('More')} style={({pressed})=>[styles.headerAction,pressed&&styles.pressed]}>
+        <Icon name="person-circle-outline" color="#FFFFFF" size={27}/>
+      </Pressable>}
+      contextAction={<Pressable accessibilityRole="button" accessibilityLabel="Choose assigned site" onPress={()=>setSitePickerOpen(true)}
+        style={({pressed})=>[styles.headerSitePill,pressed&&styles.pressed]}>
+        <Icon name="location" size={16} color={GREEN}/>
+        <Text style={styles.headerSitePillText} numberOfLines={1}>{siteId===ALL_SITES?'All Sites':selectedSite?.code??'Sites'}</Text>
+        <Icon name="chevron-down-outline" size={14} color={GREEN}/>
+      </Pressable>}
+    />:<ScreenHeader
+      title={({Incidents:'Incident Inbox',Guards:'Guards',Sites:'Sites',More:'More',Shifts:'Shifts & Rosters',OB:'Occurrence Book',Handovers:'Shift Handovers',Home:'Overview'} as Record<Page,string>)[page]}
+      onBack={()=>navigate('Home')}
+      rightAction={<Pressable accessibilityRole="button" accessibilityLabel="Choose assigned site" onPress={()=>setSitePickerOpen(true)} style={styles.screenSiteButton}>
+        <Icon name="location-outline" size={20} color="#FFFFFF"/>
+      </Pressable>}
+    />}
 
     <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      {page==='Home'?<>
-        <View style={styles.greetingRow}>
-          <View style={{flex:1,gap:4}}>
-            <Text style={styles.greeting}>Good day, Supervisor</Text>
-            <Text style={styles.personName} numberOfLines={1}>{greetingName}</Text>
-            <Text style={styles.welcome}>Here’s what needs attention today.</Text>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Choose assigned site" onPress={()=>setSitePickerOpen(true)}
-            style={({pressed})=>[styles.sitePill,pressed&&styles.pressed]}>
-            <Icon name="location" size={17}/>
-            <Text style={styles.sitePillText} numberOfLines={1}>{siteId===ALL_SITES?'All Sites':selectedSite?.code??'Sites'}</Text>
-            <Icon name="chevron-down-outline" size={15}/>
-          </Pressable>
-        </View>
-      </>:<View style={styles.sectionHeader}>
-        <Text style={styles.h1}>{({Incidents:'Incident Inbox',Guards:'Guards & Duty',Sites:'Assigned Sites',More:'More',Shifts:'Shifts & Rosters',OB:'Occurrence Book',Handovers:'Shift Handovers',Home:'Overview'} as Record<Page,string>)[page]}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Choose assigned site" onPress={()=>setSitePickerOpen(true)} style={styles.sitePill}>
-          <Icon name="location-outline" size={17}/><Text style={styles.sitePillText} numberOfLines={1}>{scopeTitle}</Text><Icon name="chevron-down-outline" size={15}/>
-        </Pressable>
-      </View>}
-
       {siteStatus==='loading'?<ActivityIndicator color={GREEN} size="large" style={{marginVertical:36}}/>:
        siteStatus==='error'?<RecordCard><Text style={styles.error}>{error}</Text><Action label="Retry loading sites" onPress={()=>{void loadSites();}}/></RecordCard>:
        sites.length===0?<Empty message="No assigned sites are available for this account. Contact an administrator."/>:null}
@@ -513,16 +503,11 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
 
 const styles=StyleSheet.create({
   screen:{flex:1,backgroundColor:'#fff'},
-  scroll:{flex:1},content:{paddingHorizontal:16,paddingTop:6,paddingBottom:28,gap:14},
-  header:{paddingHorizontal:16,paddingVertical:13,backgroundColor:'#fff',flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12},
-  brandRow:{flex:1,flexDirection:'row',alignItems:'center',gap:9},brandLogo:{height:40,width:39},
-  brand:{fontSize:19,color:NAVY,flexShrink:1},brandBold:{fontWeight:'800'},
-  headerAvatar:{width:43,height:43,borderRadius:24,backgroundColor:'#F0F3F5',alignItems:'center',justifyContent:'center'},
-  greetingRow:{flexDirection:'row',alignItems:'center',gap:10,paddingTop:12,paddingBottom:4},
-  greeting:{color:MUTED,fontSize:15},personName:{color:NAVY,fontSize:27,fontWeight:'800'},welcome:{color:MUTED,fontSize:13},
-  sitePill:{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:'#F0F4F5',borderRadius:28,minHeight:44,paddingHorizontal:10,maxWidth:170},
-  sitePillText:{fontSize:12,fontWeight:'600',color:GREEN,flexShrink:1},
-  sectionHeader:{gap:12,paddingTop:12},
+  scroll:{flex:1},content:{paddingHorizontal:16,paddingTop:14,paddingBottom:28,gap:14},
+  headerAction:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center'},
+  headerSitePill:{minHeight:42,maxWidth:150,backgroundColor:'#FFFFFF',borderRadius:22,paddingHorizontal:10,flexDirection:'row',alignItems:'center',gap:5},
+  headerSitePillText:{fontSize:12,fontWeight:'700',color:GREEN,flexShrink:1},
+  screenSiteButton:{width:48,height:48,alignItems:'center',justifyContent:'center',borderRadius:24},
   h1:{fontSize:24,fontWeight:'800',color:NAVY},h2:{fontSize:21,fontWeight:'800',color:NAVY},
   heading:{fontSize:16,fontWeight:'700',color:NAVY},paragraph:{fontSize:14,lineHeight:21,color:NAVY},
   muted:{fontSize:12,lineHeight:19,color:MUTED},smallNote:{fontSize:11,lineHeight:16,color:MUTED,flex:1},

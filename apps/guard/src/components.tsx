@@ -2,6 +2,7 @@ import React from 'react';
 import {Ionicons} from '@expo/vector-icons';
 import {
   ActivityIndicator,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -17,7 +18,7 @@ import {
  * Preserves exact brand identity from DESIGN.md & UI_DESIGN_HANDOFF.md
  */
 export const COLORS = {
-  primary: '#174E42',
+  primary: '#075638',
   primaryHover: '#113F36',
   primarySoft: '#E7F2EE',
   navy: '#152836',
@@ -38,6 +39,10 @@ export const COLORS = {
   focus: '#246FA8',
   white: '#FFFFFF',
 } as const;
+
+export const APP_HEADER_HEIGHT = 64;
+export const HOME_HEADER_MIN_HEIGHT = 142;
+export const APP_HORIZONTAL_PADDING = 16;
 
 export const FONTS = {
   regular: Platform.select({ android: 'NotoSans-Regular', default: 'System' }),
@@ -137,8 +142,89 @@ export function formatTimestamp(iso?: string | null): string {
 }
 
 /* ============================================================================
- * 1. AppHeader
+ * 1. Shared application headers
  * ========================================================================== */
+export interface HomeHeaderProps {
+  greeting: string;
+  name: string;
+  subtitle?: string;
+  brandAction?: React.ReactNode;
+  contextAction?: React.ReactNode;
+}
+
+export const HomeHeader: React.FC<HomeHeaderProps> = ({
+  greeting,
+  name,
+  subtitle,
+  brandAction,
+  contextAction,
+}) => (
+  <View style={styles.homeHeader}>
+    <View style={styles.homeBrandRow}>
+      <View style={styles.homeBrandBlock}>
+        <View style={styles.homeLogoTile}>
+          <Image
+            source={require('../assets/brand-shield.png')}
+            resizeMode="contain"
+            style={styles.homeLogo}
+            accessibilityIgnoresInvertColors
+          />
+        </View>
+        <Text numberOfLines={1} style={styles.homeBrandText}>
+          Baseguard SmartOps
+        </Text>
+      </View>
+      {brandAction ? <View style={styles.homeBrandAction}>{brandAction}</View> : null}
+    </View>
+    <View style={styles.homeContextRow}>
+      <View style={styles.homeGreetingBlock}>
+        <Text numberOfLines={1} style={styles.homeGreeting}>{greeting}</Text>
+        <Text numberOfLines={1} style={styles.homeName}>{name}</Text>
+        {subtitle ? <Text numberOfLines={1} style={styles.homeSubtitle}>{subtitle}</Text> : null}
+      </View>
+      {contextAction ? <View style={styles.homeContextAction}>{contextAction}</View> : null}
+    </View>
+  </View>
+);
+
+export interface ScreenHeaderProps {
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+  rightAction?: React.ReactNode;
+  backAccessibilityLabel?: string;
+}
+
+export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
+  title,
+  subtitle,
+  onBack,
+  rightAction,
+  backAccessibilityLabel = 'Go back',
+}) => (
+  <View style={styles.screenHeader}>
+    {onBack ? (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={backAccessibilityLabel}
+        onPress={onBack}
+        style={({pressed}) => [styles.screenHeaderBack, pressed && styles.pressedOpacity]}
+      >
+        <Ionicons name="arrow-back" size={24} color={COLORS.white}/>
+      </Pressable>
+    ) : (
+      <View style={styles.screenHeaderMark}>
+        <Image source={require('../assets/brand-shield.png')} resizeMode="contain" style={styles.screenHeaderLogo}/>
+      </View>
+    )}
+    <View style={styles.screenHeaderTitles}>
+      <Text numberOfLines={1} style={styles.screenHeaderTitle}>{title}</Text>
+      {subtitle ? <Text numberOfLines={1} style={styles.screenHeaderSubtitle}>{subtitle}</Text> : null}
+    </View>
+    {rightAction ? <View style={styles.screenHeaderAction}>{rightAction}</View> : null}
+  </View>
+);
+
 export interface AppHeaderProps {
   title: string;
   subtitle?: string;
@@ -158,85 +244,32 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onPressSyncBadge,
   onSignOut,
 }) => {
-  return (
-    <View style={styles.headerContainer}>
-      <View style={styles.headerTopRow}>
-        <View style={styles.headerLeft}>
-          {onBack ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              onPress={onBack}
-              style={({ pressed }) => [
-                styles.iconHitTarget,
-                pressed && styles.pressedOpacity,
-              ]}
-            >
-              <Text style={styles.backArrowText}>←</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.brandBadge}>
-              <Text style={styles.brandBadgeText}>BG</Text>
-            </View>
-          )}
-          <View style={styles.headerTitleBlock}>
-            <Text numberOfLines={1} style={styles.headerTitle}>
-              {title}
-            </Text>
-            {subtitle ? (
-              <Text numberOfLines={1} style={styles.headerSubtitle}>
-                {subtitle}
-              </Text>
-            ) : null}
-          </View>
-        </View>
-
-        <View style={styles.headerRight}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              isOnline ? 'Connection online' : 'Connection offline'
-            }
-            disabled={!onPressSyncBadge}
-            onPress={onPressSyncBadge}
-            style={[
-              styles.connectivityPill,
-              isOnline ? styles.connectivityOnline : styles.connectivityOffline,
-            ]}
-          >
-            <View
-              style={[
-                styles.connectivityDot,
-                { backgroundColor: isOnline ? COLORS.success : COLORS.offline },
-              ]}
-            />
-            <Text
-              style={[
-                styles.connectivityText,
-                { color: isOnline ? COLORS.success : COLORS.offline },
-              ]}
-            >
-              {isOnline ? 'Online' : 'Offline'}
-              {pendingCount > 0 ? ` · ${pendingCount}` : ''}
-            </Text>
-          </Pressable>
-
-          {onSignOut ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Sign out"
-              onPress={onSignOut}
-              style={({ pressed }) => [
-                styles.signOutButton,
-                pressed && styles.pressedOpacity,
-              ]}
-            >
-              <Text style={styles.signOutText}>Sign Out</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
+  const actions = (
+    <View style={styles.compactHeaderActions}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isOnline ? `Online${pendingCount ? `, ${pendingCount} pending` : ''}` : `Offline${pendingCount ? `, ${pendingCount} pending` : ''}`}
+        disabled={!onPressSyncBadge}
+        onPress={onPressSyncBadge}
+        style={({pressed}) => [styles.compactHeaderButton, pressed && styles.pressedOpacity]}
+      >
+        <Ionicons name={isOnline ? 'cloud-done-outline' : 'cloud-offline-outline'} size={21} color={COLORS.white}/>
+        {pendingCount > 0 ? <View style={styles.compactHeaderBadge}><Text style={styles.compactHeaderBadgeText}>{pendingCount}</Text></View> : null}
+      </Pressable>
+      {onSignOut ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+          onPress={onSignOut}
+          style={({pressed}) => [styles.compactHeaderButton, pressed && styles.pressedOpacity]}
+        >
+          <Ionicons name="log-out-outline" size={22} color={COLORS.white}/>
+        </Pressable>
+      ) : null}
     </View>
+  );
+  return (
+    <ScreenHeader title={title} subtitle={subtitle} onBack={onBack} rightAction={actions}/>
   );
 };
 
@@ -623,8 +656,8 @@ export interface BottomNavBarProps {
 }
 
 const GUARD_TABS: { key: GuardTabKey; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; activeIcon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
-  { key: 'today', label: 'Today', icon: 'home-outline', activeIcon: 'home' },
-  { key: 'ob', label: 'Occurrence Book', icon: 'document-text-outline', activeIcon: 'document-text' },
+  { key: 'today', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
+  { key: 'ob', label: 'OB Entry', icon: 'document-text-outline', activeIcon: 'document-text' },
   { key: 'incidents', label: 'Incidents', icon: 'shield-outline', activeIcon: 'shield' },
   { key: 'handover', label: 'Handover', icon: 'swap-horizontal-outline', activeIcon: 'swap-horizontal' },
 ];
@@ -676,113 +709,99 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
 };
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+  homeHeader: {
+    minHeight: HOME_HEADER_MIN_HEIGHT,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: APP_HORIZONTAL_PADDING,
+    paddingTop: 8,
     paddingBottom: 12,
   },
-  headerTopRow: {
+  homeBrandRow: {
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
   },
-  headerLeft: {
+  homeBrandBlock: {
+    minWidth: 0,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    flex: 1,
-    minWidth: 0,
   },
-  iconHitTarget: {
-    minWidth: 48,
-    minHeight: 48,
+  homeLogoTile: {
+    width: 38,
+    height: 38,
     borderRadius: 10,
-    backgroundColor: COLORS.surfaceMuted,
+    backgroundColor: COLORS.white,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  backArrowText: {
-    fontSize: 20,
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
-  },
-  brandBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandBadgeText: {
+  homeLogo: {width: 32, height: 34},
+  homeBrandText: {
+    flexShrink: 1,
     color: COLORS.white,
-    fontSize: 15,
     fontFamily: FONTS.bold,
     fontWeight: '700',
-  },
-  headerTitleBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  headerTitle: {
     fontSize: 17,
-    lineHeight: 22,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    color: COLORS.text,
+    letterSpacing: -0.2,
   },
-  headerSubtitle: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontFamily: FONTS.regular,
-    color: COLORS.textMuted,
-    marginTop: 2,
+  homeBrandAction: {flexDirection: 'row', alignItems: 'center'},
+  homeContextRow: {
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#FFFFFF3D',
+    paddingTop: 9,
   },
-  headerRight: {
+  homeGreetingBlock: {flex: 1, minWidth: 0},
+  homeGreeting: {color: '#D8EEE6', fontFamily: FONTS.regular, fontSize: 12, lineHeight: 16},
+  homeName: {color: COLORS.white, fontFamily: FONTS.bold, fontWeight: '700', fontSize: 19, lineHeight: 25},
+  homeSubtitle: {color: '#D8EEE6', fontFamily: FONTS.regular, fontSize: 11, lineHeight: 15},
+  homeContextAction: {maxWidth: '46%', alignItems: 'flex-end'},
+  screenHeader: {
+    height: APP_HEADER_HEIGHT,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: APP_HORIZONTAL_PADDING,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  connectivityPill: {
-    minHeight: 36,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 18,
-    flexDirection: 'row',
+  screenHeaderBack: {
+    width: 48,
+    height: 48,
+    marginLeft: -12,
+    borderRadius: 24,
     alignItems: 'center',
-    gap: 6,
-  },
-  connectivityOnline: {
-    backgroundColor: COLORS.successSoft,
-  },
-  connectivityOffline: {
-    backgroundColor: COLORS.offlineSoft,
-  },
-  connectivityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  connectivityText: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  signOutButton: {
-    minHeight: 40,
-    paddingHorizontal: 10,
     justifyContent: 'center',
   },
-  signOutText: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-    fontWeight: '600',
-    color: COLORS.textMuted,
+  screenHeaderMark: {
+    width: 38,
+    height: 38,
+    marginRight: 2,
+    borderRadius: 10,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
+  screenHeaderLogo: {width: 31, height: 33},
+  screenHeaderTitles: {flex: 1, minWidth: 0},
+  screenHeaderTitle: {color: COLORS.white, fontFamily: FONTS.bold, fontWeight: '700', fontSize: 18, lineHeight: 23},
+  screenHeaderSubtitle: {color: '#D8EEE6', fontFamily: FONTS.regular, fontSize: 11, lineHeight: 15},
+  screenHeaderAction: {maxWidth: '44%', flexDirection: 'row', alignItems: 'center'},
+  compactHeaderActions: {flexDirection: 'row', alignItems: 'center'},
+  compactHeaderButton: {width: 44, height: 48, alignItems: 'center', justifyContent: 'center'},
+  compactHeaderBadge: {
+    position: 'absolute', right: 2, top: 5, minWidth: 17, height: 17, paddingHorizontal: 4,
+    borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.danger,
+  },
+  compactHeaderBadgeText: {color: COLORS.white, fontFamily: FONTS.bold, fontSize: 9, lineHeight: 12},
   chip: {
     paddingHorizontal: 10,
     paddingVertical: 5,
