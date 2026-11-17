@@ -1,4 +1,5 @@
 import React from 'react';
+import {Ionicons} from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Platform,
@@ -39,9 +40,9 @@ export const COLORS = {
 } as const;
 
 export const FONTS = {
-  regular: Platform.select({ android: 'sans-serif', default: 'System' }),
-  medium: Platform.select({ android: 'sans-serif-medium', default: 'System' }),
-  bold: Platform.select({ android: 'sans-serif', default: 'System' }),
+  regular: Platform.select({ android: 'NotoSans-Regular', default: 'System' }),
+  medium: Platform.select({ android: 'NotoSans-SemiBold', default: 'System' }),
+  bold: Platform.select({ android: 'NotoSans-Bold', default: 'System' }),
 } as const;
 
 export type DeliveryStatus =
@@ -621,11 +622,11 @@ export interface BottomNavBarProps {
   unsyncedCount?: number;
 }
 
-const GUARD_TABS: { key: GuardTabKey; label: string; icon: string }[] = [
-  { key: 'today', label: 'Today', icon: '🛡️' },
-  { key: 'ob', label: 'OB', icon: '📖' },
-  { key: 'incidents', label: 'Incidents', icon: '⚠️' },
-  { key: 'handover', label: 'Handover', icon: '⇄' },
+const GUARD_TABS: { key: GuardTabKey; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; activeIcon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { key: 'today', label: 'Today', icon: 'home-outline', activeIcon: 'home' },
+  { key: 'ob', label: 'Occurrence Book', icon: 'document-text-outline', activeIcon: 'document-text' },
+  { key: 'incidents', label: 'Incidents', icon: 'shield-outline', activeIcon: 'shield' },
+  { key: 'handover', label: 'Handover', icon: 'swap-horizontal-outline', activeIcon: 'swap-horizontal' },
 ];
 
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({
@@ -651,7 +652,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
             ]}
           >
             <View style={styles.bottomTabIconRow}>
-              <Text style={styles.bottomTabIcon}>{tab.icon}</Text>
+              <Ionicons name={isActive ? tab.activeIcon : tab.icon} size={22} color={isActive ? COLORS.primary : COLORS.textMuted}/>
               {showBadge ? (
                 <View style={styles.tabBadge}>
                   <Text style={styles.tabBadgeText}>{unsyncedCount}</Text>
@@ -747,7 +748,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   connectivityPill: {
-    minHeight: 48,
+    minHeight: 36,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 18,
@@ -772,7 +773,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   signOutButton: {
-    minHeight: 48,
+    minHeight: 40,
     paddingHorizontal: 10,
     justifyContent: 'center',
   },
@@ -829,7 +830,7 @@ const styles = StyleSheet.create({
   },
   bannerActionBtn: {
     marginTop: 10,
-    minHeight: 48,
+    minHeight: 44,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
