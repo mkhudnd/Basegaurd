@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildDescription,confirmedReceipt,localDateTime,makeQueuedPayload,parseLocalDateTime,statusLabel,validateIncident,validateOccurrence,withSubmissionLock} from './incident-domain.ts';
+import {buildDescription,confirmedReceipt,localDateTime,makeQueuedPayload,parseLocalDateTime,statusLabel,validateIncident,validateOccurrence,validateOccurrenceEvent,withSubmissionLock} from './incident-domain.ts';
 import {syncPending} from './sync-engine.ts';
 
 const now=Date.parse('2026-10-19T12:00:00.000Z');
@@ -90,4 +90,16 @@ test('rapid duplicate Save calls run one write and release lock after failure',a
  assert.equal(lock.current,false);
  assert.equal(await withSubmissionLock(lock,async()=>{writes++;return 'retry';}),'retry');
  assert.equal(writes,2);
+});
+
+test('occurrence payload retains selected event time, distinct from saved time',()=>{
+ const eventAt='2026-10-19T09:30:00.000Z';
+ assert.equal(validateOccurrenceEvent('patrol','Patrol completed at the main gate.',eventAt,duty,now),null);
+ assert.match(validateOccurrenceEvent('patrol','Patrol completed at the main gate.','not-a-time',duty,now),/valid occurrence date and time/);
+ assert.match(validateOccurrenceEvent('patrol','Patrol completed at the main gate.','2026-10-19T05:30:00.000Z',duty,now),/assigned shift/);
+ assert.match(validateOccurrenceEvent('patrol','Patrol completed at the main gate.','2026-10-19T12:06:00.000Z',duty,now),/five minutes/);
+ assert.match(validateOccurrenceEvent('patrol','Patrol completed at the main gate.','2026-10-11T12:00:00.000Z',duty,now),/seven days/);
+ const payload=makeQueuedPayload('occurrence','uuid-2','site','shift', {category:'patrol',narrative:'Patrol completed at the main gate.',eventAt}, '2026-10-19T12:00:00.000Z');
+ assert.equal(payload.p_event_at,eventAt);
+ assert.notEqual(payload.p_event_at,'2026-10-19T12:00:00.000Z');
 });

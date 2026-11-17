@@ -61,9 +61,6 @@ export const SyncQueueScreen: React.FC<SyncQueueScreenProps> = ({
   const receivedCount = items.filter(
     (i) => !['queued', 'sending', 'failed'].includes(i.deliveryStatus)
   ).length;
-  const receivedItems = items.filter(
-    (i) => i.deliveryStatus === 'received'
-  );
 
   return (
     <View style={styles.root}>
@@ -189,25 +186,6 @@ export const SyncQueueScreen: React.FC<SyncQueueScreenProps> = ({
             </SurfaceCard>
           ))
         )}
-
-        {receivedItems.length > 0 ? (
-          <>
-            <Text style={styles.sectionTitle}>Received by Server ({receivedItems.length})</Text>
-            {receivedItems.map((item) => (
-              <SurfaceCard key={item.id} style={styles.queueCard}>
-                <Pressable accessibilityRole="button" onPress={() => onSelectItem(item)}>
-                  <View style={styles.cardTopRow}>
-                    <Text style={styles.localIdText}>{item.serverRef || item.id}</Text>
-                    <StatusChip status={item.deliveryStatus} />
-                  </View>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  <Text numberOfLines={2} style={styles.itemDesc}>{item.description}</Text>
-                  <Text style={styles.metaText}>Received: {formatTimestamp(item.receivedAt)}</Text>
-                </Pressable>
-              </SurfaceCard>
-            ))}
-          </>
-        ) : null}
       </ScrollView>
     </View>
   );

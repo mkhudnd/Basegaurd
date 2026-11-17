@@ -5,3 +5,5 @@ export * from './SubmissionStatusScreen';
 export * from './SyncQueueScreen';
 export * from './IncidentHistoryScreen';
 export * from './IncidentDetailsScreen';
+
+export * from './OccurrenceBookScreen';

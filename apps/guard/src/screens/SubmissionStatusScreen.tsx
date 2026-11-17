@@ -89,7 +89,7 @@ export const SubmissionStatusScreen: React.FC<SubmissionStatusScreenProps> = ({
         ) : (
           <InfoAlertBanner
             tone="offline"
-            title={record.deliveryStatus === 'sending' ? 'Sending / Awaiting Receipt' : 'Saved Locally / Pending Sync'}
+            title="Saved Locally / Pending Sync"
             body="This report is saved in your phone's encrypted SQLite outbox. It has NOT been delivered to the server or any supervisor yet."
           />
         )}

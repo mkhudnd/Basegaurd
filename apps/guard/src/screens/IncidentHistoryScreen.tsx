@@ -99,7 +99,9 @@ export const IncidentHistoryScreen: React.FC<IncidentHistoryScreenProps> = ({
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {loadError ? <InfoAlertBanner tone="warning" title="Server History Unavailable" body={loadError} /> : null}
+        {loadError ? (
+          <InfoAlertBanner tone="danger" title="History unavailable" body={loadError} />
+        ) : null}
         <View style={styles.topButtonRow}>
           <SmartButton
             label="+ Report New Incident"
@@ -147,7 +149,7 @@ export const IncidentHistoryScreen: React.FC<IncidentHistoryScreenProps> = ({
           <EmptyStateCard
             title="No Matching Incident Reports"
             description="No incident reports match the selected filter on this device."
-            actionLabel={canReport ? 'Report an Incident' : undefined}
+            actionLabel="Report an Incident"
             onAction={canReport ? onReportNewIncident : undefined}
           />
         ) : (
@@ -189,7 +191,7 @@ export const IncidentHistoryScreen: React.FC<IncidentHistoryScreenProps> = ({
                     Event: {formatTimestamp(item.eventAt)}
                   </Text>
                   <Text style={styles.metaText}>
-                    {item.createdAt ? `Saved: ${formatTimestamp(item.createdAt)}` : 'No local copy on this phone'}
+                    Saved: {formatTimestamp(item.createdAt)}
                   </Text>
                 </View>
               </Pressable>
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   filterPill: {
-    minHeight: 48,
+    minHeight: 40,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,

@@ -15,6 +15,8 @@ export type LocalRecord = {
 export type Duty = {
  shift_id: string; site_id: string; site_name: string; guard_id: string;
  started_at: string; ended_at: string | null; fetched_at: string;
+ presence_status?: 'on_duty' | 'on_break';
+ presence_updated_at?: string | null;
 };
 let dbCache: Promise<SQLite.SQLiteDatabase> | undefined;
 const KEY_NAME = 'smartops_db_key_v1';
@@ -68,7 +70,7 @@ export async function queueRecord(kind: Kind, guard: Duty, data: Record<string,s
  const d = await db();
  const id = Crypto.randomUUID();
  const savedAt = new Date().toISOString();
- const eventTime = kind === 'incident' ? data.eventAt : savedAt;
+ const eventTime = data.eventAt ?? savedAt;
  if (!eventTime || !Number.isFinite(Date.parse(eventTime))) throw new Error('Invalid event time');
  const payload = makeQueuedPayload(kind,id,guard.site_id,guard.shift_id,
   {category:data.category,severity:data.severity,narrative:data.narrative,eventAt:eventTime},savedAt);

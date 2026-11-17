@@ -53,12 +53,25 @@ export function validateOccurrence(category:string,narrative:string,duty:DutyWin
  return null;
 }
 
+/** Occurrence event time is distinct from local save time, even when queued offline. */
+export function validateOccurrenceEvent(category:string,narrative:string,eventAt:string,duty:DutyWindow|null,now=Date.now()):string|null {
+ const basic=validateOccurrence(category,narrative,duty,now);
+ if(basic)return basic;
+ const event=Date.parse(eventAt);
+ if(!Number.isFinite(event))return 'Enter a valid occurrence date and time.';
+ if(event>now+5*60*1000 || event<now-7*24*60*60*1000)
+   return 'Occurrence time must be within the last seven days and no more than five minutes ahead.';
+ if(event<Date.parse(duty!.started_at) || (duty!.ended_at && event>Date.parse(duty!.ended_at)))
+   return 'Occurrence time must fall within your assigned shift.';
+ return null;
+}
+
 export function makeQueuedPayload(kind:'incident'|'occurrence',id:string,siteId:string,shiftId:string,
  data:{category:string;severity?:string;narrative:string;eventAt?:string},savedAt:string):Record<string,string> {
  const base={p_id:id,p_site_id:siteId,p_shift_id:shiftId,p_category:data.category};
  return kind==='incident'
   ? {...base,p_severity:data.severity??'',p_description:data.narrative,p_reported_at:data.eventAt??''}
-  : {...base,p_narrative:data.narrative,p_event_at:savedAt};
+  : {...base,p_narrative:data.narrative,p_event_at:data.eventAt??savedAt};
 }
 
 export function statusLabel(state: RecordState): string {
