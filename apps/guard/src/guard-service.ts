@@ -1,14 +1,15 @@
 import {supabase} from './api';
 import type {DutyPresence} from './duty-presence';
-import {cachedDuty, listRecords, queueRecord, storeDuty, syncRecords, type Duty, type LocalRecord} from './offline';
+import {cachedDuty, db, listRecords, queueRecord, storeDuty, syncRecords, type Duty, type LocalRecord} from './offline';
 import {buildDescription, parseLocalDateTime, validateIncident, validateOccurrence, validateOccurrenceEvent, type IncidentDraft} from './incident-domain';
 
 export type ServerIncident={
+ source_occurrence_id?:string|null;
  id:string;public_number:string;site_id:string;category:string;severity:string;description:string;
  reported_at:string;received_at:string;status:'reported'|'acknowledged'|'in_progress'|'resolved'|'closed';
 };
-export type ServerIncidentUpdate={id:string;update_type:'acknowledged'|'progress'|'resolved'|'closed';note:string;created_at:string};
-export type ServerOccurrence={id:string;site_id:string;category:string;narrative:string;event_at:string;received_at:string};
+export type ServerIncidentUpdate={id:string;author_id?:string;update_type:'acknowledged'|'progress'|'resolved'|'closed';note:string;created_at:string};
+export type ServerOccurrence={id:string;shift_id:string;site_id:string;category:string;narrative:string;event_at:string;received_at:string};
 export type ServerHistory={incidents:ServerIncident[];occurrences:ServerOccurrence[];siteNames:Record<string,string>};
 
 export type DutyResult = {duty: Duty | null; source: 'server' | 'cache' | 'none'; error: string | null};
@@ -16,15 +17,19 @@ export type DutyResult = {duty: Duty | null; source: 'server' | 'cache' | 'none'
 /** A cached assignment permits a local save; the RPC rechecks it at transmission. */
 export async function loadDuty(guardId: string): Promise<DutyResult> {
  try {
-  const {data,error}=await supabase.from('shifts').select('id,site_id,started_at,ended_at,status,presence_status,presence_updated_at')
+  const {data,error}=await supabase.from('shifts').select('*')
    .eq('guard_id',guardId).eq('status','active').order('started_at',{ascending:false}).limit(1);
   if(error) throw error;
   const shift=data?.find(s=>Date.parse(s.started_at)<=Date.now()&&(!s.ended_at||Date.parse(s.ended_at)>Date.now()));
-  if(!shift) return {duty:null,source:'none',error:null};
+  if(!shift){
+   const local=await db();
+   await local.runAsync('DELETE FROM cached_duty WHERE guard_id=?',guardId);
+   return {duty:null,source:'none',error:null};
+  }
   const {data:site,error:siteError}=await supabase.from('sites').select('name').eq('id',shift.site_id).single();
   if(siteError) throw siteError;
   const duty:Duty={guard_id:guardId,shift_id:shift.id,site_id:shift.site_id,site_name:site.name,
-   started_at:shift.started_at,ended_at:shift.ended_at,fetched_at:new Date().toISOString(),
+   started_at:shift.started_at,ended_at:shift.ended_at,post:shift.post,successor_shift_id:shift.successor_shift_id,fetched_at:new Date().toISOString(),
    presence_status:shift.presence_status as DutyPresence,
    presence_updated_at:shift.presence_updated_at??null};
   await storeDuty(duty);
@@ -45,11 +50,11 @@ export async function saveIncident(duty:Duty|null,draft:IncidentDraft,eventText:
 }
 
 /** Accepts the Gemini form's parsed event ISO while preserving the same domain validator. */
-export async function saveIncidentPayload(duty:Duty|null,draft:IncidentDraft):Promise<string> {
+export async function saveIncidentPayload(duty:Duty|null,draft:IncidentDraft,sourceOccurrenceId?:string,photoUri?:string):Promise<string> {
  const error=validateIncident(draft,duty);
  if(error)throw new Error(error);
  return queueRecord('incident',duty!,{category:draft.category,severity:draft.severity,
-  narrative:buildDescription(draft),eventAt:draft.eventAt});
+  narrative:buildDescription(draft),eventAt:draft.eventAt,...(sourceOccurrenceId?{sourceOccurrenceId}:{})},photoUri);
 }
 
 export async function loadGuardName(guardId:string):Promise<string|null> {
@@ -60,9 +65,9 @@ export async function loadGuardName(guardId:string):Promise<string|null> {
 
 export async function loadServerHistory(guardId:string):Promise<ServerHistory> {
  const [reportResult,obResult,siteResult]=await Promise.all([
-  supabase.from('incidents').select('id,public_number,site_id,category,severity,description,reported_at,received_at,status')
+  supabase.from('incidents').select('*')
    .eq('reporter_id',guardId).order('received_at',{ascending:false}).limit(100),
-  supabase.from('occurrence_entries').select('id,site_id,category,narrative,event_at,received_at')
+  supabase.from('occurrence_entries').select('id,shift_id,site_id,category,narrative,event_at,received_at')
    .eq('author_id',guardId).order('event_at',{ascending:false}).limit(100),
   supabase.from('sites').select('id,name'),
  ]);
@@ -80,7 +85,7 @@ export async function loadServerIncidentDetail(guardId:string,id:string):Promise
   .eq('id',id).eq('reporter_id',guardId).maybeSingle();
  if(error)throw error;
  if(!data)return null;
- const updates=await supabase.from('incident_updates').select('id,update_type,note,created_at')
+ const updates=await supabase.from('incident_updates').select('id,author_id,update_type,note,created_at')
   .eq('incident_id',id).order('created_at',{ascending:true});
  if(updates.error)throw updates.error;
  return {incident:data as ServerIncident,updates:updates.data as ServerIncidentUpdate[]??[]};

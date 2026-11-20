@@ -11,6 +11,7 @@ import {
   View,
   ViewStyle,
   TextStyle,
+  StyleProp,
 } from 'react-native';
 
 /**
@@ -19,15 +20,16 @@ import {
  */
 export const COLORS = {
   primary: '#075638',
+  teal: '#128C7A',
   primaryHover: '#113F36',
   primarySoft: '#E7F2EE',
-  navy: '#152836',
-  background: '#F6F8F9',
+  navy: '#111827',
+  background: '#F7F8FA',
   surface: '#FFFFFF',
   surfaceMuted: '#EEF2F4',
   text: '#17252D',
-  textMuted: '#556771',
-  border: '#D9E2E6',
+  textMuted: '#4B5563',
+  border: '#E2E5EA',
   danger: '#B43732',
   dangerSoft: '#FCEAE7',
   offline: '#73549B',
@@ -159,32 +161,77 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   brandAction,
   contextAction,
 }) => (
-  <View style={styles.homeHeader}>
-    <View style={styles.homeBrandRow}>
+  <View>
+    <View style={[styles.homeBrandRow,{backgroundColor:COLORS.primary,paddingHorizontal:APP_HORIZONTAL_PADDING,minHeight:APP_HEADER_HEIGHT}]}>
       <View style={styles.homeBrandBlock}>
-        <View style={styles.homeLogoTile}>
-          <Image
-            source={require('../assets/brand-shield.png')}
-            resizeMode="contain"
-            style={styles.homeLogo}
-            accessibilityIgnoresInvertColors
-          />
+        <View style={{width:34,height:34,borderRadius:8,alignItems:'center',justifyContent:'center',backgroundColor:'#275849'}}>
+          <Image source={require('../assets/brand-shield.png')} resizeMode="contain" style={styles.screenHeaderLogo}/>
         </View>
-        <Text numberOfLines={1} style={styles.homeBrandText}>
-          Baseguard SmartOps
-        </Text>
+        <View style={{flex:1}}><Text style={styles.homeBrandText}>Baseguard SmartOps</Text><Text style={styles.homeSubtitle}>{subtitle}</Text></View>
       </View>
-      {brandAction ? <View style={styles.homeBrandAction}>{brandAction}</View> : null}
+      {brandAction}
     </View>
-    <View style={styles.homeContextRow}>
-      <View style={styles.homeGreetingBlock}>
-        <Text numberOfLines={1} style={styles.homeGreeting}>{greeting}</Text>
-        <Text numberOfLines={1} style={styles.homeName}>{name}</Text>
-        {subtitle ? <Text numberOfLines={1} style={styles.homeSubtitle}>{subtitle}</Text> : null}
-      </View>
-      {contextAction ? <View style={styles.homeContextAction}>{contextAction}</View> : null}
+    <View style={{paddingHorizontal:16,paddingTop:10,paddingBottom:8,gap:4,backgroundColor:COLORS.background}}>
+      <Text style={{color:'#48685B',fontSize:10,fontWeight:'700'}}>{new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}).toUpperCase()}</Text>
+      <Text style={{fontSize:21,fontWeight:'700',color:'#182F27'}}>{greeting}, {name}</Text>
+      {contextAction}
     </View>
   </View>
+);
+
+export interface HomeHeaderControlProps {
+  accessibilityLabel: string;
+  onPress: () => void;
+  kind?: 'icon' | 'pill';
+  style?: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+}
+
+/** Shared geometry for role-specific home-header actions and selectors. */
+export const HomeHeaderControl: React.FC<HomeHeaderControlProps> = ({
+  accessibilityLabel,
+  onPress,
+  kind = 'pill',
+  style,
+  children,
+}) => (
+  <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={accessibilityLabel}
+    onPress={onPress}
+    style={({pressed}) => [
+      kind === 'icon' ? styles.homeHeaderIconControl : styles.homeHeaderPillControl,
+      style,
+      pressed && styles.pressedOpacity,
+    ]}
+  >
+    {children}
+  </Pressable>
+);
+
+export interface ScreenHeaderActionButtonProps {
+  accessibilityLabel: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
+/** Shared 48px action hit target for every ScreenHeader variant. */
+export const ScreenHeaderActionButton: React.FC<ScreenHeaderActionButtonProps> = ({
+  accessibilityLabel,
+  onPress,
+  disabled,
+  children,
+}) => (
+  <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={accessibilityLabel}
+    disabled={disabled}
+    onPress={onPress}
+    style={({pressed}) => [styles.screenHeaderActionButton, pressed && styles.pressedOpacity, disabled && {opacity: 0.5}]}
+  >
+    {children}
+  </Pressable>
 );
 
 export interface ScreenHeaderProps {
@@ -203,6 +250,9 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   backAccessibilityLabel = 'Go back',
 }) => (
   <View style={styles.screenHeader}>
+    <View style={styles.screenHeaderMark}>
+      <Image source={require('../assets/brand-shield.png')} resizeMode="contain" style={styles.screenHeaderLogo}/>
+    </View>
     {onBack ? (
       <Pressable
         accessibilityRole="button"
@@ -212,11 +262,7 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
       >
         <Ionicons name="arrow-back" size={24} color={COLORS.white}/>
       </Pressable>
-    ) : (
-      <View style={styles.screenHeaderMark}>
-        <Image source={require('../assets/brand-shield.png')} resizeMode="contain" style={styles.screenHeaderLogo}/>
-      </View>
-    )}
+    ) : null}
     <View style={styles.screenHeaderTitles}>
       <Text numberOfLines={1} style={styles.screenHeaderTitle}>{title}</Text>
       {subtitle ? <Text numberOfLines={1} style={styles.screenHeaderSubtitle}>{subtitle}</Text> : null}
@@ -246,25 +292,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const actions = (
     <View style={styles.compactHeaderActions}>
-      <Pressable
-        accessibilityRole="button"
+      <ScreenHeaderActionButton
         accessibilityLabel={isOnline ? `Online${pendingCount ? `, ${pendingCount} pending` : ''}` : `Offline${pendingCount ? `, ${pendingCount} pending` : ''}`}
         disabled={!onPressSyncBadge}
         onPress={onPressSyncBadge}
-        style={({pressed}) => [styles.compactHeaderButton, pressed && styles.pressedOpacity]}
       >
         <Ionicons name={isOnline ? 'cloud-done-outline' : 'cloud-offline-outline'} size={21} color={COLORS.white}/>
         {pendingCount > 0 ? <View style={styles.compactHeaderBadge}><Text style={styles.compactHeaderBadgeText}>{pendingCount}</Text></View> : null}
-      </Pressable>
+      </ScreenHeaderActionButton>
       {onSignOut ? (
-        <Pressable
-          accessibilityRole="button"
+        <ScreenHeaderActionButton
           accessibilityLabel="Sign out"
           onPress={onSignOut}
-          style={({pressed}) => [styles.compactHeaderButton, pressed && styles.pressedOpacity]}
         >
           <Ionicons name="log-out-outline" size={22} color={COLORS.white}/>
-        </Pressable>
+        </ScreenHeaderActionButton>
       ) : null}
     </View>
   );
@@ -749,6 +791,23 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   homeBrandAction: {flexDirection: 'row', alignItems: 'center'},
+  homeHeaderIconControl: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  homeHeaderPillControl: {
+    minHeight: 44,
+    maxWidth: 160,
+    paddingHorizontal: 11,
+    borderRadius: 18,
+    backgroundColor: '#F2F5F6',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
   homeContextRow: {
     minHeight: 68,
     flexDirection: 'row',
@@ -795,8 +854,8 @@ const styles = StyleSheet.create({
   screenHeaderTitle: {color: COLORS.white, fontFamily: FONTS.bold, fontWeight: '700', fontSize: 18, lineHeight: 23},
   screenHeaderSubtitle: {color: '#D8EEE6', fontFamily: FONTS.regular, fontSize: 11, lineHeight: 15},
   screenHeaderAction: {maxWidth: '44%', flexDirection: 'row', alignItems: 'center'},
+  screenHeaderActionButton: {width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24},
   compactHeaderActions: {flexDirection: 'row', alignItems: 'center'},
-  compactHeaderButton: {width: 44, height: 48, alignItems: 'center', justifyContent: 'center'},
   compactHeaderBadge: {
     position: 'absolute', right: 2, top: 5, minWidth: 17, height: 17, paddingHorizontal: 4,
     borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.danger,

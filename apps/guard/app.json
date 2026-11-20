@@ -20,7 +20,15 @@
         }
       ],
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Baseguard to take incident evidence photos.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-video"
     ],
     "extra": {
       "eas": {

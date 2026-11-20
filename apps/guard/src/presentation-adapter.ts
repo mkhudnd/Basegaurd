@@ -57,7 +57,7 @@ export function incidentHistoryItems(local:LocalRecord[],server:ServerIncident[]
 export function activityItems(records:LocalRecord[],siteNames:Record<string,string>):ActivitySummaryItem[] {
  return records.slice(0,3).map(record=>{
   const item=localQueueItem(record,siteNames);
-  return {id:item.id,recordType:item.recordType,title:item.title,description:item.description,
+  return {id:item.id,recordType:record.kind,title:item.title,description:item.description,
    eventAt:item.eventAt,siteName:item.siteName,deliveryStatus:item.deliveryStatus,serverRef:item.serverRef};
  });
 }
@@ -81,6 +81,6 @@ export function incidentDetail(local:LocalRecord|null,remote:ServerIncident|null
   receivedAt:confirmedLocal?local.received_at:verifiedRemote?.received_at??null,
   acknowledgmentVerifiedFromServer:Boolean(verifiedRemote),acknowledgedAt:acknowledged?.created_at??null,
   closedAt:closed?.created_at??null,
-  updates:verifiedRemote?updates.map(u=>({id:u.id,updateType:u.update_type,note:u.note,createdAt:u.created_at})):[],
+  updates:verifiedRemote?updates.map(u=>({id:u.id,updateType:u.update_type,note:u.note,createdAt:u.created_at,authorName:u.author_id})):[],
   lastError:local?.error??null};
 }

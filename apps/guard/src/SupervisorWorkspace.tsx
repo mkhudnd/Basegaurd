@@ -1,12 +1,15 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import * as Crypto from 'expo-crypto';
+import {missedCheckIn} from './shift-coverage';
+import {HomeActions, HomeQuickAction, StatCard, homeStyles} from './HomeQuickAction';
 import {
-  ActivityIndicator, Alert, AppState, BackHandler, Modal, Pressable,
-  ScrollView, StyleSheet, Text, View, useWindowDimensions,
+  ActivityIndicator, Alert, AppState, BackHandler, Image, Modal, Pressable,
+  ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {supabase} from './api';
 import {InviteGuardScreen} from './auth/InviteGuardScreen';
-import {COLORS,HomeHeader,ScreenHeader} from './components';
+import {COLORS,HomeHeader,HomeHeaderControl,ScreenHeader} from './components';
 import {countSupervisorOverview} from './supervisor-overview';
 
 /* Site information comes from an RLS-filtered Supabase query, NOT locally held guard records. */
@@ -21,14 +24,16 @@ type Occurrence = {
 };
 type Handover = {
   id:string; site_id:string; notes:string; submitted_at:string;
+  post:string|null;
   accepted_at:string|null; outgoing_guard_id:string; incoming_guard_id:string|null;
 };
 type Shift = {
+  checked_in_at?:string|null;post?:string|null;
   id:string; site_id:string; guard_id:string; status:string;
   started_at:string; ended_at:string|null;
   presence_status:'on_duty'|'on_break'|null;
 };
-type IncidentUpdate = {id:string; update_type:string; note:string; created_at:string};
+type IncidentUpdate = {id:string; author_id:string; update_type:string; note:string; created_at:string};
 type Page = 'Home'|'Incidents'|'Guards'|'Sites'|'More'|'Shifts'|'OB'|'Handovers';
 type LoadState = 'loading'|'ready'|'error';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -66,19 +71,6 @@ function RecordCard({children}: {children:React.ReactNode}) {
 function Empty({message}: {message:string}) {
   return <RecordCard><Text style={styles.muted}>{message}</Text></RecordCard>;
 }
-function QuickAction({title,subtitle,icon,color,bg,onPress}: {
-  title:string;subtitle:string;icon:IconName;color:string;bg:string;onPress:()=>void;
-}) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress}
-    style={({pressed})=>[styles.quickAction,{backgroundColor:bg},pressed&&styles.pressed]}>
-    <View style={[styles.quickIcon,{backgroundColor:color}]}><Icon name={icon} color="#fff" size={23}/></View>
-    <View style={styles.quickText}>
-      <Text style={styles.quickTitle} numberOfLines={2}>{title}</Text>
-      <Text style={styles.quickSubtitle} numberOfLines={2}>{subtitle}</Text>
-    </View>
-    <Icon name="chevron-forward-outline" size={17} color={MUTED}/>
-  </Pressable>;
-}
 function NavRow({icon,title,subtitle,onPress}: {icon:IconName;title:string;subtitle:string;onPress:()=>void}){
   return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress}
     style={({pressed})=>[styles.navRow,pressed&&styles.pressed]}>
@@ -100,6 +92,7 @@ const bottomTabs: {page:Page;label:string;icon:IconName;selected:IconName}[] = [
 export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut:()=>Promise<void>}) {
   const {width}=useWindowDimensions();
   const [page,setPage]=useState<Page>('Home');
+  const [allOb,setAllOb]=useState(false);
   const [sites,setSites]=useState<Site[]>([]);
   const [siteId,setSiteId]=useState<string>(ALL_SITES);
   const [siteStatus,setSiteStatus]=useState<LoadState>('loading');
@@ -114,9 +107,13 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
   const [shifts,setShifts]=useState<Shift[]>([]);
   const [lastReceived,setLastReceived]=useState<string|null>(null);
   const [selected,setSelected]=useState<Incident|null>(null);
+  const [photoUrl,setPhotoUrl]=useState<string|null>(null);
+  const [photoError,setPhotoError]=useState('');
   const [updates,setUpdates]=useState<IncidentUpdate[]>([]);
   const [detailError,setDetailError]=useState('');
   const [ackBusy,setAckBusy]=useState(false);
+  const [responseNote,setResponseNote]=useState('');
+  const responseAttempt=useRef<{id:string;incident:string;action:string;note:string}|null>(null);
   const [showInvite,setShowInvite]=useState(false);
   const requestSequence=useRef(0);
 
@@ -165,11 +162,11 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
         .select('id,site_id,category,narrative,event_at,received_at')
         .in('site_id',siteIds).order('received_at',{ascending:false}).limit(200),
       supabase.from('shift_handovers')
-        .select('id,site_id,notes,submitted_at,accepted_at,outgoing_guard_id,incoming_guard_id')
+        .select('id,site_id,notes,post,submitted_at,accepted_at,outgoing_guard_id,incoming_guard_id')
         .in('site_id',siteIds).order('submitted_at',{ascending:false}).limit(100),
       supabase.from('shifts')
-        .select('id,site_id,guard_id,status,started_at,ended_at,presence_status')
-        .in('site_id',siteIds).eq('status','active').order('started_at',{ascending:false}).limit(200),
+        .select('*')
+        .in('site_id',siteIds).in('status',['active','scheduled']).order('started_at',{ascending:false}).limit(200),
     ]);
     if(requestNo!==requestSequence.current)return;
     if(i.error||o.error||h.error||s.error){
@@ -198,7 +195,7 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
     if(!selected){setUpdates([]);return;}
     let active=true;
     setDetailError('');
-    void supabase.from('incident_updates').select('id,update_type,note,created_at')
+    void supabase.from('incident_updates').select('id,author_id,update_type,note,created_at')
       .eq('incident_id',selected.id).order('created_at',{ascending:true}).then(({data,error:e})=>{
         if(!active)return;
         if(e)setDetailError(`Unable to load review history: ${e.message}`);
@@ -206,18 +203,70 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
       });
     return ()=>{active=false;};
   },[selected?.id,selected?.status]);
+  useEffect(()=>{
+    let current=true;
+    setPhotoUrl(null);setPhotoError('');
+    if(!selected)return ()=>{current=false;};
+    void (async()=>{
+      const {data,error:e}=await supabase.from('incident_photos').select('object_path')
+        .eq('incident_id',selected.id).maybeSingle();
+      if(!current)return;
+      if(e){setPhotoError('Photo information unavailable: '+e.message);return;}
+      if(!data)return;
+      const {data:signed,error:signError}=await supabase.storage.from('incident-evidence').createSignedUrl(data.object_path,300);
+      if(!current)return;
+      if(signError){setPhotoError('Photo is not available yet. Refresh to retry.');return;}
+      setPhotoUrl(signed.signedUrl);
+    })();
+    return ()=>{current=false;};
+  },[selected?.id]);
 
   const overview=useMemo(()=>countSupervisorOverview(incidents,shifts,new Date().toISOString()),[incidents,shifts]);
   const {awaiting,openCases:openCount,activeShifts,onDuty:dutyGuards,onBreak:breakGuards}=overview;
+  const attentionHandovers=handovers.filter(h=>!h.accepted_at && (h.incoming_guard_id || !h.post ||
+    !activeShifts.some(s=>s.site_id===h.site_id&&s.post===h.post&&s.presence_status==='on_duty')));
   const latestActivity=useMemo(()=>[
+    ...handovers.map(h=>({kind:'handover' as const,id:h.id,title:h.accepted_at?'Handover acknowledged':'Handover submitted',
+      subtitle:siteName(h.site_id),when:h.accepted_at??h.submitted_at,incident:null})),
+    ...shifts.flatMap(s=>s.checked_in_at?[{kind:'shift' as const,id:s.id,title:'Guard checked in',
+      subtitle:[siteName(s.site_id),s.post].filter(Boolean).join(' · '),when:s.checked_in_at,incident:null}]:[]),
     ...incidents.map(i=>({kind:'incident' as const,id:i.id,title:`${pretty(i.category)} · ${i.public_number}`,
       subtitle:`${siteName(i.site_id)} · ${pretty(i.status)}`,when:i.received_at,incident:i})),
     ...ob.map(o=>({kind:'ob' as const,id:o.id,title:`${pretty(o.category)} · OB entry`,
       subtitle:siteName(o.site_id),when:o.received_at,incident:null})),
-  ].sort((a,b)=>Date.parse(b.when)-Date.parse(a.when)).slice(0,3),[incidents,ob,sites]);
+  ].sort((a,b)=>Date.parse(b.when)-Date.parse(a.when)).slice(0,5),[incidents,ob,sites,handovers,shifts]);
 
   function navigate(next:Page){setSelected(null);setPage(next);}
-  function viewIncident(incident:Incident){setSelected(incident);setPage('Incidents');}
+  function viewIncident(incident:Incident){setResponseNote('');responseAttempt.current=null;setSelected(incident);setPage('Incidents');}
+  async function recordResponse(action:'progress'|'resolved'){
+    if(!selected||ackBusy)return;
+    const note=responseNote.trim();
+    if(note.length<2||note.length>1000){setDetailError('Enter a note between 2 and 1,000 characters.');return;}
+    let attempt=responseAttempt.current;
+    if(!attempt||attempt.incident!==selected.id||attempt.action!==action||attempt.note!==note){
+      attempt={id:Crypto.randomUUID(),incident:selected.id,action,note};
+      responseAttempt.current=attempt;
+    }
+    setAckBusy(true);setDetailError('');
+    try{
+      const {error:e}=await supabase.rpc('record_incident_response',{
+        p_update_id:attempt.id,p_incident_id:attempt.incident,p_action:attempt.action,p_note:attempt.note,
+      });
+      if(e)throw e;
+      const {data,error:readError}=await supabase.from('incidents')
+        .select('id,public_number,site_id,category,severity,description,status,reported_at,received_at')
+        .eq('id',selected.id).in('site_id',siteIds).single();
+      if(readError||!data)throw readError??new Error('Incident refresh failed');
+      const {data:history,error:historyError}=await supabase.from('incident_updates')
+        .select('id,author_id,update_type,note,created_at').eq('incident_id',selected.id)
+        .order('created_at',{ascending:true});
+      if(historyError)throw historyError;
+      setUpdates((history??[]) as IncidentUpdate[]);
+      setSelected(data as Incident);setResponseNote('');responseAttempt.current=null;
+      await refresh();
+    }catch(e){setDetailError(e instanceof Error?e.message:'Response could not be confirmed. Retry to check its receipt.');}
+    finally{setAckBusy(false);}
+  }
   async function performAcknowledge(id:string){
     if(ackBusy)return;
     setAckBusy(true);setDetailError('');
@@ -254,20 +303,20 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
   const navigationActive=bottomTabs.some(t=>t.page===page)?page:'More';
   const bottomTabSize=width<380?10:11;
 
-  return <View style={styles.screen}>
+  return <View style={[styles.screen,page==='Home'&&{backgroundColor:COLORS.background}]}>
     {page==='Home'?<HomeHeader
-      greeting="Good day, Supervisor"
+      greeting={new Date().getHours()<12?'Good morning':new Date().getHours()<18?'Good afternoon':'Good evening'}
       name={greetingName}
-      subtitle="Here’s what needs attention today."
-      brandAction={<Pressable accessibilityRole="button" accessibilityLabel="Account and additional options"
-        onPress={()=>navigate('More')} style={({pressed})=>[styles.headerAction,pressed&&styles.pressed]}>
-        <Icon name="person-circle-outline" color="#FFFFFF" size={27}/>
-      </Pressable>}
+      subtitle="Supervisor workspace"
+      brandAction={<HomeHeaderControl kind="icon" accessibilityLabel="Account and additional options"
+        onPress={()=>navigate('More')}>
+        <View style={{width:32,height:32,borderRadius:16,backgroundColor:'#285748',alignItems:'center',justifyContent:'center'}}>
+          <Text style={{color:'white',fontWeight:'700',fontSize:12}}>{greetingName.trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()}</Text>
+        </View>
+      </HomeHeaderControl>}
       contextAction={<Pressable accessibilityRole="button" accessibilityLabel="Choose assigned site" onPress={()=>setSitePickerOpen(true)}
-        style={({pressed})=>[styles.headerSitePill,pressed&&styles.pressed]}>
-        <Icon name="location" size={16} color={GREEN}/>
-        <Text style={styles.headerSitePillText} numberOfLines={1}>{siteId===ALL_SITES?'All Sites':selectedSite?.code??'Sites'}</Text>
-        <Icon name="chevron-down-outline" size={14} color={GREEN}/>
+        style={{backgroundColor:'white',borderColor:'#C9DCD1',borderWidth:1,borderRadius:9,minHeight:48,paddingHorizontal:12,flexDirection:'row',alignItems:'center',gap:8}}>
+        <Icon name="location-outline" size={17}/><Text numberOfLines={1} style={{flex:1,color:NAVY}}>{scopeTitle}</Text><Icon name="chevron-down" size={16}/>
       </Pressable>}
     />:<ScreenHeader
       title={({Incidents:'Incident Inbox',Guards:'Guards',Sites:'Sites',More:'More',Shifts:'Shifts & Rosters',OB:'Occurrence Book',Handovers:'Shift Handovers',Home:'Overview'} as Record<Page,string>)[page]}
@@ -285,87 +334,56 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
 
       {contentReady?<>
         {!!error?<View style={styles.errorCard}><Icon name="alert-circle-outline" color={RED}/><Text style={[styles.error,{flex:1}]}>{error}</Text></View>:null}
-        <View style={styles.refreshRow}>
+        {page!=='Home'&&<View style={styles.refreshRow}>
           <Text style={styles.smallNote}>{statusLine} · Server records only</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Refresh supervisor data" disabled={refreshing}
             onPress={()=>{void refresh();}} style={styles.refreshButton}>
             {refreshing?<ActivityIndicator color={GREEN} size="small"/>:<Icon name="refresh-outline" size={18}/>}
             <Text style={styles.refreshText}>Refresh</Text>
           </Pressable>
-        </View>
+        </View>}
 
         {page==='Home'&&<>
-          <View style={styles.assignmentCard}>
-            <View style={styles.assignmentHead}>
-              <View style={styles.assignmentIcon}><Icon name="business-outline" size={28}/></View>
-              <View style={{flex:1,gap:4}}>
-                <Text style={styles.assignmentLabel}>Supervised locations</Text>
-                <Text style={styles.assignmentTitle} numberOfLines={2}>{scopeTitle}</Text>
-                <Text style={styles.assignmentSub}>{siteId===ALL_SITES?`${sites.length} assigned ${sites.length===1?'site':'sites'}`:selectedSite?.code??''}</Text>
-              </View>
-              <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>Assigned</Text></View>
-            </View>
-            <View style={styles.metricStrip}>
-              {[{name:'Sites',n:siteIds.length,icon:'business-outline' as IconName,color:GREEN},
-                {name:'On duty',n:dutyGuards,icon:'people-outline' as IconName,color:GREEN},
-                {name:'On break',n:breakGuards,icon:'cafe-outline' as IconName,color:'#AE781D'},
-                {name:'Open cases',n:openCount,icon:'alert-circle-outline' as IconName,color:RED}
-              ].map((metric,index)=><View key={metric.name} style={[styles.metricItem,index>0&&styles.metricDivider]}>
-                <Icon name={metric.icon} color={metric.color} size={21}/>
-                <Text style={styles.metricCount}>{stale?'—':metric.n}</Text>
-                <Text style={styles.metricLabel}>{metric.name}</Text>
-              </View>)}
-            </View>
-            <Text style={styles.limitNote}>Duty numbers: loaded active shifts (up to 200). Cases: latest 100 server incidents.</Text>
-          </View>
-
-          <Pressable accessibilityRole="button" accessibilityLabel="Review incidents awaiting acknowledgement"
-            onPress={()=>navigate('Incidents')} style={({pressed})=>[styles.attentionBanner,{backgroundColor:awaiting>0?'#FFF0F0':'#EDF6F2'},pressed&&styles.pressed]}>
-            <View style={[styles.attentionIcon,{backgroundColor:awaiting>0?RED:GREEN}]}>
-              <Icon name={awaiting>0?'warning-outline':'checkmark-circle-outline'} color="#fff" size={26}/>
-            </View>
-            <View style={{flex:1,gap:4}}>
-              <Text style={styles.bannerTitle}>{stale?'Awaiting incident status':awaiting>0?`${awaiting} ${awaiting===1?'incident needs':'incidents need'} acknowledgement`:'No new incidents awaiting review'}</Text>
-              <Text style={styles.bannerBody}>Review server-received incident reports</Text>
-            </View>
-            <Icon name="chevron-forward-outline" size={20} color={awaiting>0?RED:GREEN}/>
-          </Pressable>
-
-          <Text style={styles.h2}>Quick Actions</Text>
-          <View style={styles.quickGrid}>
-            <QuickAction title="Incident Inbox" subtitle="Review and acknowledge" icon="document-text-outline" color="#2677C9" bg="#EAF3FE" onPress={()=>navigate('Incidents')}/>
-            <QuickAction title="Guards" subtitle="Duty status and invitations" icon="people-outline" color={GREEN} bg="#EAF4F0" onPress={()=>navigate('Guards')}/>
-            <QuickAction title="Sites" subtitle="View assigned locations" icon="business-outline" color="#526576" bg="#F0F3F6" onPress={()=>navigate('Sites')}/>
-            <QuickAction title="Shifts & Rosters" subtitle="View active shifts" icon="calendar-outline" color="#6674CC" bg="#F1F0FF" onPress={()=>navigate('Shifts')}/>
-          </View>
-
-          <View style={styles.spaceBetween}><Text style={styles.h2}>Recent Activity</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="View incident inbox" onPress={()=>navigate('Incidents')} style={styles.textButton}>
-              <Text style={styles.textLink}>View All</Text><Icon name="chevron-forward-outline" size={16} color={GREEN}/>
-            </Pressable>
-          </View>
-          {latestActivity.length===0?<Empty message={stale?'Waiting for server activity…':'No incidents or occurrence entries received in this scope.'}/>:
-            <View style={styles.activityCard}>
-              {latestActivity.map((a,index)=><Pressable key={`${a.kind}-${a.id}`} accessibilityRole="button" onPress={()=>a.incident?viewIncident(a.incident):navigate('OB')}
-                style={({pressed})=>[styles.activityRow,index>0&&styles.activityDivider,pressed&&styles.pressed]}>
-                <View style={[styles.activityIcon,{backgroundColor:a.kind==='incident'?'#FFF0F0':'#EAF4F0'}]}>
-                  <Icon name={a.kind==='incident'?'alert-outline':'document-text-outline'} color={a.kind==='incident'?RED:GREEN} size={23}/>
-                </View>
-                <View style={{flex:1,gap:4}}><Text style={styles.activityTitle} numberOfLines={1}>{a.title}</Text>
-                  <Text style={styles.activitySubtitle} numberOfLines={2}>{a.subtitle} · {clockTime(a.when)}</Text></View>
-                <Icon name="chevron-forward-outline" size={18} color={MUTED}/>
-              </Pressable>)}
-            </View>}
-
-          <Text style={styles.h2}>Safety & Alerts</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="View emergency procedures" onPress={()=>Alert.alert('Emergency procedures','Use approved emergency telephone/radio procedures for assistance. Automatic SOS and push alert delivery are not yet active in SmartOps.')}
-            style={({pressed})=>[styles.attentionBanner,{backgroundColor:'#FFF0F0'},pressed&&styles.pressed]}>
-            <View style={[styles.attentionIcon,{backgroundColor:RED}]}><Text style={styles.sos}>SOS</Text></View>
-            <View style={{flex:1,gap:4}}><Text style={[styles.bannerTitle,{color:RED}]}>Emergency Procedures</Text>
-              <Text style={styles.bannerBody}>Call or radio for assistance. Automatic SOS not yet active.</Text></View>
-            <Icon name="chevron-forward-outline" color={RED}/>
-          </Pressable>
-          <Text style={styles.safetyNote}>Use established emergency procedures. In-app reporting does not dispatch assistance.</Text>
+          <Text style={homeStyles.heading}>Needs attention</Text>
+          {!awaiting&&!shifts.some(s=>missedCheckIn(s))&&!attentionHandovers.length&&
+            <Empty message={stale?'Awaiting server records…':'No outstanding items in the loaded records.'}/>}
+          {incidents.filter(i=>i.status==='reported').sort((a,b)=>Number(['high','critical'].includes(b.severity))-Number(['high','critical'].includes(a.severity))).map(i=>
+            <Pressable key={i.id} accessibilityRole="button" onPress={()=>viewIncident(i)} style={styles.errorCard}>
+              <Icon name="warning-outline" color={RED}/>
+              <View style={{flex:1}}><Text style={styles.heading}>{pretty(i.severity)} incident needs acknowledgement</Text>
+                <Text style={styles.muted}>{i.public_number} · {pretty(i.category)} · {siteName(i.site_id)}</Text>
+                <Text style={styles.textLink}>Review incident →</Text></View>
+            </Pressable>)}
+          {shifts.filter(s=>missedCheckIn(s)).map(s=><NavRow key={s.id} icon="time-outline" title="Missed check-in" subtitle={s.post??siteName(s.site_id)} onPress={()=>Alert.alert('Scheduled shift',siteName(s.site_id)+' · '+(s.post??'Post unassigned')+' · '+dateText(s.started_at)+' · Guard '+s.guard_id)}/>)}
+          {attentionHandovers.map(h=><NavRow key={h.id} icon="swap-horizontal" title={h.incoming_guard_id?'Pending handover':'Coverage gap · no incoming guard'} subtitle={siteName(h.site_id)+' · '+(h.post??'Post unassigned')+' · '+clockTime(h.submitted_at)} onPress={()=>Alert.alert('Handover '+h.id,h.notes+'\nOutgoing: '+h.outgoing_guard_id+'\nIncoming: '+(h.incoming_guard_id??'Unassigned'))}/>)}
+          <Text style={homeStyles.heading}>Operational overview</Text>
+          <Text style={styles.muted}>{scopeTitle} · Latest loaded records · {statusLine}</Text>
+          <HomeActions>
+            <StatCard label="Sites in view" value={siteIds.length}/>
+            <StatCard label="Active guards" value={stale?'—':new Set(activeShifts.map(s=>s.guard_id)).size}/>
+            <StatCard label="On duty" value={stale?'—':dutyGuards}/>
+            <StatCard label="Open incidents" value={stale?'—':openCount}/>
+            <StatCard label="Pending handovers" value={stale?'—':handovers.filter(h=>!h.accepted_at).length}/>
+            <StatCard label="Missed check-ins" value={stale?'—':shifts.filter(s=>missedCheckIn(s)).length}/>
+          </HomeActions>
+          <Text style={homeStyles.heading}>Management</Text>
+          <HomeActions>
+            <HomeQuickAction title="Invite guard" subtitle="Assign site access" icon="person-add-outline" onPress={()=>setShowInvite(true)}/>
+            <HomeQuickAction title="Review incidents" subtitle="Open incident inbox" icon="warning-outline" onPress={()=>navigate('Incidents')}/>
+            <HomeQuickAction title="View shifts" subtitle="Active assignments" icon="calendar-outline" onPress={()=>navigate('Shifts')}/>
+            <HomeQuickAction title="View sites" subtitle="Managed locations" icon="business-outline" onPress={()=>navigate('Sites')}/>
+          </HomeActions>
+          <Text style={homeStyles.heading}>Scheduled guards</Text>
+          <RecordCard><Text style={styles.muted}>Scheduled assignments · check-in recorded separately</Text>
+            {shifts.filter(s=>s.status==='scheduled').map(s=><Text key={s.id} style={styles.paragraph}>{s.post??siteName(s.site_id)} · Scheduled {clockTime(s.started_at)} · Guard {s.guard_id.slice(-8)}</Text>)}
+            {activeShifts.filter(s=>s.checked_in_at).map(s=><Text key={s.id} style={styles.paragraph}>{s.post??siteName(s.site_id)} · Checked in {clockTime(s.checked_in_at!)} · Guard {s.guard_id.slice(-8)}</Text>)}
+          </RecordCard>
+          <Text style={homeStyles.heading}>Recent occurrence book</Text>
+          {ob.length?ob.slice(0,3).map(o=><NavRow key={o.id} icon="book-outline" title={pretty(o.category)} subtitle={clockTime(o.event_at)+' · '+siteName(o.site_id)} onPress={()=>navigate('OB')}/>):<Empty message={stale?'Waiting for entries…':'No entries received.'}/>}
+          <Text style={homeStyles.heading}>Recent activity</Text>
+          {latestActivity.length?latestActivity.map(a=><View key={a.kind+a.id} style={styles.card}>
+            <Text style={styles.heading}>{a.title}</Text><Text style={styles.muted}>{a.subtitle} · {dateText(a.when)}</Text>
+          </View>):<Empty message={stale?'Waiting for activity…':'No activity received.'}/>}
         </>}
 
         {page==='Incidents'&&(selected?<>
@@ -378,15 +396,25 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
             <Text style={styles.muted}>Site: {siteName(selected.site_id)}</Text>
             <Text style={styles.muted}>Occurred/reported: {dateText(selected.reported_at)}</Text>
             <Text style={styles.muted}>Received by server: {dateText(selected.received_at)}</Text>
+            {photoUrl?<Image accessibilityLabel="Incident evidence photo" source={{uri:photoUrl}}
+              style={{width:'100%',height:240,borderRadius:10}} resizeMode="contain"/>:null}
+            {photoError?<Text style={styles.error}>{photoError}</Text>:null}
             {selected.status==='reported'&&<Action label={ackBusy?'Acknowledging…':'Acknowledge incident'}
               disabled={ackBusy||refreshing} onPress={()=>confirmAcknowledge(selected.id)}/>}
+            {(selected.status==='acknowledged'||selected.status==='in_progress')&&<>
+              <Text style={styles.heading}>Supervisor response</Text>
+              <TextInput accessibilityLabel="Response note" multiline maxLength={1000} value={responseNote}
+                onChangeText={setResponseNote} placeholder="Enter follow-up or resolution details" style={styles.responseInput}/>
+              <Action label={ackBusy?'Saving…':'Add follow-up'} disabled={ackBusy} onPress={()=>void recordResponse('progress')}/>
+              <Action label="Resolve incident" secondary disabled={ackBusy} onPress={()=>void recordResponse('resolved')}/>
+            </>}
             <Text style={styles.muted}>Acknowledgement does not dispatch assistance. Use established emergency procedures.</Text>
           </RecordCard>
           <Text style={styles.heading}>Review history</Text>
           {detailError?<Text style={styles.error}>{detailError}</Text>:null}
           {updates.length===0?<Empty message="No supervisor updates recorded yet."/>:
             updates.map(u=><RecordCard key={u.id}><Text style={styles.heading}>{pretty(u.update_type)}</Text>
-              <Text style={styles.paragraph}>{u.note}</Text><Text style={styles.muted}>{dateText(u.created_at)}</Text></RecordCard>)}
+              <Text style={styles.paragraph}>{u.note}</Text><Text style={styles.muted}>{dateText(u.created_at)} · Actor {u.author_id}</Text></RecordCard>)}
         </>:<>
           <Text style={styles.muted}>Server-received incidents · Latest 100 · {scopeTitle}</Text>
           {!incidents.length?<Empty message={lastReceived?'No incidents have been received for these sites.':'Awaiting first successful server refresh.'}/>:
@@ -440,9 +468,10 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
         </>}
 
         {page==='OB'&&<>
+          <Action secondary label={allOb?'All entries · Show today':'Today · Show all entries'} onPress={()=>setAllOb(!allOb)}/>
           <Text style={styles.muted}>Server-received occurrence entries · Latest 200 · {scopeTitle}</Text>
           {!ob.length?<Empty message="No occurrence entries received for these sites."/>:
-            ob.map(o=><RecordCard key={o.id}>
+            ob.filter(o=>allOb||new Date(o.event_at).toLocaleDateString('en-CA',{timeZone:'Africa/Harare'})===new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Harare'})).map(o=><RecordCard key={o.id}>
               <Text style={styles.heading}>{pretty(o.category)} · {siteName(o.site_id)}</Text>
               <Text style={styles.paragraph}>{o.narrative}</Text>
               <Text style={styles.muted}>Event: {dateText(o.event_at)}</Text><Text style={styles.muted}>Received: {dateText(o.received_at)}</Text>
@@ -460,6 +489,9 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
         </>}
 
         {page==='More'&&<View style={styles.moreCard}>
+          <NavRow icon="people-outline" title="Guards" subtitle="Duty status and invitations" onPress={()=>navigate('Guards')}/>
+          <NavRow icon="refresh-outline" title="Refresh dashboard" subtitle={statusLine} onPress={()=>void refresh()}/>
+          <NavRow icon="warning-outline" title="Emergency procedures" subtitle="Approved assistance channels" onPress={()=>Alert.alert('Emergency procedures','Use approved emergency telephone or radio procedures.')}/>
           <NavRow icon="calendar-outline" title="Shifts & Rosters" subtitle="View active shift assignments" onPress={()=>navigate('Shifts')}/>
           <NavRow icon="reader-outline" title="Occurrence Book" subtitle="Server-received duty entries" onPress={()=>navigate('OB')}/>
           <NavRow icon="swap-horizontal-outline" title="Handovers" subtitle="Review handover records" onPress={()=>navigate('Handovers')}/>
@@ -504,8 +536,6 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
 const styles=StyleSheet.create({
   screen:{flex:1,backgroundColor:'#fff'},
   scroll:{flex:1},content:{paddingHorizontal:16,paddingTop:14,paddingBottom:28,gap:14},
-  headerAction:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center'},
-  headerSitePill:{minHeight:42,maxWidth:150,backgroundColor:'#FFFFFF',borderRadius:22,paddingHorizontal:10,flexDirection:'row',alignItems:'center',gap:5},
   headerSitePillText:{fontSize:12,fontWeight:'700',color:GREEN,flexShrink:1},
   screenSiteButton:{width:48,height:48,alignItems:'center',justifyContent:'center',borderRadius:24},
   h1:{fontSize:24,fontWeight:'800',color:NAVY},h2:{fontSize:21,fontWeight:'800',color:NAVY},
@@ -515,12 +545,13 @@ const styles=StyleSheet.create({
   error:{fontSize:13,fontWeight:'600',lineHeight:19,color:RED},errorCard:{padding:12,borderRadius:13,backgroundColor:'#fff2f2',flexDirection:'row',alignItems:'center',gap:10},
   refreshRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6},refreshButton:{flexDirection:'row',alignItems:'center',gap:5,minHeight:36,paddingHorizontal:5},refreshText:{fontSize:12,color:GREEN,fontWeight:'700'},
   card:{borderRadius:16,borderWidth:1,borderColor:BORDER,backgroundColor:'#fff',padding:16,gap:10},
+  responseInput:{borderWidth:1,borderColor:BORDER,borderRadius:10,minHeight:88,padding:12,color:NAVY,textAlignVertical:'top'},
   status:{fontSize:12,fontWeight:'700',color:GREEN},urgent:{color:RED},
   spaceBetween:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:8},
   action:{backgroundColor:GREEN,minHeight:48,paddingVertical:12,paddingHorizontal:15,borderRadius:12,alignItems:'center',justifyContent:'center'},
   actionSecondary:{backgroundColor:'#E9F2EF',borderWidth:1,borderColor:'#B7D4C9'},
   actionText:{color:'#fff',fontWeight:'700',fontSize:13},actionTextSecondary:{color:GREEN},
-  assignmentCard:{backgroundColor:'#F1F5F5',borderRadius:18,paddingTop:17,paddingHorizontal:15,paddingBottom:14,borderLeftWidth:5,borderLeftColor:GREEN,gap:18},
+  assignmentCard:{backgroundColor:'#F3F6F6',borderRadius:14,paddingTop:12,paddingHorizontal:15,paddingBottom:14,borderLeftWidth:4,borderLeftColor:GREEN,gap:8},
   assignmentHead:{flexDirection:'row',alignItems:'center',gap:10},
   assignmentIcon:{width:55,height:55,borderRadius:28,backgroundColor:'#E2EFEA',alignItems:'center',justifyContent:'center'},
   assignmentLabel:{color:MUTED,fontSize:13},assignmentTitle:{color:NAVY,fontSize:20,fontWeight:'800'},assignmentSub:{color:MUTED,fontSize:12},
@@ -532,10 +563,8 @@ const styles=StyleSheet.create({
   attentionBanner:{borderRadius:18,padding:13,flexDirection:'row',alignItems:'center',gap:12,minHeight:104},
   attentionIcon:{width:53,height:53,borderRadius:27,alignItems:'center',justifyContent:'center'},
   bannerTitle:{fontSize:15,fontWeight:'800',color:NAVY},bannerBody:{fontSize:12,lineHeight:18,color:MUTED},sos:{fontSize:16,fontWeight:'900',color:'#fff'},
-  quickGrid:{flexDirection:'row',flexWrap:'wrap',gap:10},quickAction:{width:'48%',flexGrow:1,minHeight:138,padding:12,borderRadius:18,flexDirection:'row',alignItems:'center',gap:8},
-  quickIcon:{width:40,height:40,borderRadius:24,alignItems:'center',justifyContent:'center'},quickText:{flex:1,gap:5},quickTitle:{fontSize:14,fontWeight:'800',color:NAVY},quickSubtitle:{fontSize:11,lineHeight:16,color:MUTED},
   activityCard:{borderWidth:1,borderColor:BORDER,borderRadius:18,backgroundColor:'#fff',paddingHorizontal:13},
-  activityRow:{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:12,minHeight:81},activityDivider:{borderTopWidth:1,borderColor:BORDER},
+  activityRow:{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:12,minHeight:64},activityDivider:{borderTopWidth:1,borderColor:BORDER},
   activityIcon:{width:46,height:46,borderRadius:23,alignItems:'center',justifyContent:'center'},activityTitle:{fontSize:14,fontWeight:'700',color:NAVY},activitySubtitle:{fontSize:12,color:MUTED,lineHeight:18},
   safetyNote:{fontSize:12,color:MUTED,lineHeight:18,marginBottom:4},
   textButton:{flexDirection:'row',alignItems:'center',minHeight:40,gap:2},textLink:{fontSize:13,color:GREEN,fontWeight:'700'},

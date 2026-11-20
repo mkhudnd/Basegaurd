@@ -213,6 +213,7 @@ export const IncidentDetailsScreen: React.FC<IncidentDetailsScreenProps> = ({
                     {u.updateType.toUpperCase()} · {formatTimestamp(u.createdAt)}
                   </Text>
                   <Text style={styles.timelineStepNote}>{u.note}</Text>
+                  {u.authorName ? <Text style={styles.mutedNote}>Actor {u.authorName}</Text> : null}
                 </View>
               ))}
             </View>

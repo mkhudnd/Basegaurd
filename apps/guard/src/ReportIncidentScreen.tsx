@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { EmergencyEscalationBanner, ScreenHeader } from './components';
+import { EmergencyEscalationBanner, ScreenHeader, ScreenHeaderActionButton } from './components';
 
 /**
  * Exact Stitch Tailwind Config Tokens from report_incident/code.html
@@ -134,6 +136,7 @@ export interface IncidentFormSubmitPayload {
   description: string;
   actionsTaken?: string;
   witnesses?: string;
+  photoUri?: string;
 }
 
 export interface ReportIncidentScreenProps {
@@ -146,6 +149,8 @@ export interface ReportIncidentScreenProps {
   isOnline?: boolean;
   pendingCount?: number;
   initialEventAt?: string;
+  initialNotes?: string;
+  post?:string|null;
   isSubmitting?: boolean;
   storageError?: string | null;
   errorMessage?: string | null;
@@ -209,7 +214,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   shiftStartedAt,
   isOnline = false,
   pendingCount = 0,
-  initialEventAt,
+  initialEventAt, initialNotes, post,
   isSubmitting = false,
   storageError = null,
   errorMessage = null,
@@ -234,7 +239,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   );
   const [clockFlash, setClockFlash] = useState<boolean>(false);
 
-  const [narrative, setNarrative] = useState<string>('');
+  const [narrative, setNarrative] = useState<string>(initialNotes??'');
   const [checkedActions, setCheckedActions] = useState<Record<string, boolean>>({
     padlock: true,
     radio_partner: true,
@@ -243,6 +248,21 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   const [witnessField, setWitnessField] = useState<string>('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitLock, setSubmitLock] = useState<boolean>(false);
+  const [photoUri,setPhotoUri]=useState<string|null>(null);
+  const [cameraBusy,setCameraBusy]=useState(false);
+
+  const takePhoto=async()=>{
+    if(cameraBusy)return;
+    setCameraBusy(true);
+    try{
+      const permission=await ImagePicker.requestCameraPermissionsAsync();
+      if(!permission.granted){Alert.alert('Camera permission needed','Allow camera access in device settings to take a photo. You can still submit this report without one.');return;}
+      const result=await ImagePicker.launchCameraAsync({mediaTypes:['images'],quality:0.7});
+      if(!result.canceled)setPhotoUri(result.assets[0].uri);
+    }catch(error){
+      Alert.alert('Camera unavailable',error instanceof Error?error.message:'Unable to take a photo.');
+    }finally{setCameraBusy(false);}
+  };
 
   const narrativeLen = narrative.trim().length;
   const isNarrativeValid = narrativeLen >= 20;
@@ -331,7 +351,9 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
       nextErrors.description = 'Narrative must not exceed 3000 characters.';
     }
 
-    const parsedTime = resolveEventIsoFromInput(eventTimeText, baseDate);
+    const parsedTime = initialNotes!==undefined && initialEventAt
+      ? {valid:true,iso:initialEventAt,ms:Date.parse(initialEventAt)}
+      : resolveEventIsoFromInput(eventTimeText, baseDate);
     if (!parsedTime.valid || !parsedTime.iso || !parsedTime.ms) {
       nextErrors.eventAt =
         'Enter a valid time (e.g. 13:10 CAT or YYYY-MM-DD HH:mm).';
@@ -376,6 +398,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
       description: narrative.trim(),
       actionsTaken: combinedActions || undefined,
       witnesses: witnessClean || undefined,
+      photoUri: photoUri || undefined,
     };
 
     const submitCallback = onSubmitIncident || onSubmit;
@@ -398,16 +421,14 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
         title="Report Incident"
         subtitle={resolvedSiteName}
         onBack={handleConfirmDiscard}
-        rightAction={<Pressable
-          accessibilityRole="button"
+        rightAction={<ScreenHeaderActionButton
           accessibilityLabel={isOnline ? `${pendingCount} queued reports, online` : `${pendingCount} queued reports, offline`}
           disabled={!onOpenSyncQueue}
           onPress={onOpenSyncQueue}
-          style={styles.headerQueueButton}
         >
           <MaterialIcons name={isOnline ? 'cloud-done' : 'cloud-off'} size={21} color={STITCH.white}/>
           {pendingCount>0?<View style={styles.headerQueueBadge}><Text style={styles.headerQueueBadgeText}>{pendingCount}</Text></View>:null}
-        </Pressable>}
+        </ScreenHeaderActionButton>}
       />
 
       {/* MAIN SCROLLABLE FORM */}
@@ -429,7 +450,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
             <View style={styles.flex1}>
               <Text style={styles.contextOverline}>FACILITY CONTEXT</Text>
               <Text numberOfLines={1} style={styles.contextSiteTitle}>
-                {resolvedSiteName}
+                {resolvedSiteName}{post?' · '+post:''}
               </Text>
             </View>
           </View>
@@ -697,7 +718,8 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
               ]}
             >
               <TextInput
-                accessibilityLabel="Editable event time"
+                editable={initialNotes===undefined}
+                accessibilityLabel={initialNotes===undefined?'Editable event time':'Original occurrence time'}
                 value={eventTimeText}
                 onChangeText={(txt) => {
                   setEventTimeText(txt);
@@ -715,6 +737,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Reset to device clock"
+              disabled={initialNotes!==undefined}
               onPress={handleRefreshClock}
               style={({ pressed }) => [
                 styles.syncButton,
@@ -894,23 +917,16 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
             <Text style={styles.sectionLabelText}>Evidence Capture</Text>
           </View>
 
-          <View style={styles.cameraDisabledBox}>
-            <View style={styles.noPhotoCircle}>
-              <MaterialIcons
-                name="no-photography"
-                size={24}
-                color={STITCH.textMuted}
-              />
-            </View>
-            <Text style={styles.cameraInactiveHeading}>
-              Camera Module Inactive
-            </Text>
-            <Text style={styles.cameraInactiveBody}>
-              Photographic evidence attachment temporarily{' '}
-              <Text style={styles.urgentBoldRed}>DISABLED</Text> pending
-              Baseguard corporate camera policy approval.
-            </Text>
-          </View>
+          {photoUri?<Image source={{uri:photoUri}} accessibilityLabel="Incident photo preview"
+            style={{width:'100%',height:200,borderRadius:10,marginBottom:8}} resizeMode="contain"/>:null}
+          <Pressable accessibilityRole="button" disabled={cameraBusy||isSubmitting} onPress={()=>void takePhoto()}
+            style={{minHeight:48,alignItems:'center',justifyContent:'center',backgroundColor:STITCH.primary,borderRadius:10}}>
+            <Text style={{color:'white',fontWeight:'700'}}>{cameraBusy?'Opening camera…':photoUri?'Retake photo':'Take photo'}</Text>
+          </Pressable>
+          {photoUri?<Pressable accessibilityRole="button" onPress={()=>setPhotoUri(null)}
+            style={{minHeight:48,alignItems:'center',justifyContent:'center'}}>
+            <Text style={{color:STITCH.danger,fontWeight:'700'}}>Remove photo</Text>
+          </Pressable>:null}
         </View>
 
         {/* 9. Reference Code & Sync Advisory */}
@@ -974,13 +990,6 @@ const styles = StyleSheet.create({
   flex1: {
     flex: 1,
     minWidth: 0,
-  },
-  headerQueueButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   headerQueueBadge: {
     position: 'absolute',

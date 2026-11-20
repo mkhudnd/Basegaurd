@@ -1,7 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {BackHandler,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {BottomNavBar,COLORS,FONTS,InfoAlertBanner,ScreenHeader,SmartButton,type GuardTabKey} from '../components';
+import {BottomNavBar,COLORS,FONTS,InfoAlertBanner,ScreenHeader,ScreenHeaderActionButton,SmartButton,type GuardTabKey} from '../components';
 import {localDateTime,parseLocalDateTime} from '../incident-domain';
 import {OB_CHOICES,composeObNarrative,emptyObFields,filterObRows,obDateKey,obTimeKey,obTitle,type ObCategory,type ObFieldValues,type ObRow} from '../occurrence-ui';
 
@@ -10,6 +10,7 @@ export type OccurrenceDraft={category:ObCategory;narrative:string;eventAt:string
 export type OccurrenceBookScreenProps={
  rows:ObRow[]; isOnline:boolean; hasDuty:boolean; dutyStatus:string; pendingCount:number;
  error?:string|null; saving:boolean; openEntryRequest:number;
+ activeShiftId?:string;onReportEntry:(row:ObRow)=>void;
  onSave:(draft:OccurrenceDraft,syncImmediately:boolean)=>Promise<void>;
  onSelectTab:(tab:GuardTabKey)=>void;onOpenSyncQueue:()=>void;onRefresh:()=>void;
  onOpenDuty:()=>void;onOpenDraftChange?:(open:boolean)=>void;onRequestConsumed?:()=>void;
@@ -21,10 +22,10 @@ const statusInfo=(status:ObRow['status'])=>status==='received'?{name:'Received',
 const initialForm=()=>{const now=localDateTime(new Date().toISOString());return {date:now.slice(0,10),time:now.slice(11,16)};};
 
 export const OccurrenceBookScreen:React.FC<OccurrenceBookScreenProps>=({
- rows,isOnline,hasDuty,dutyStatus,pendingCount,error,saving,openEntryRequest,onSave,onSelectTab,onOpenSyncQueue,onRefresh,onOpenDuty,onOpenDraftChange,onRequestConsumed,
+ activeShiftId,onReportEntry,rows,isOnline,hasDuty,dutyStatus,pendingCount,error,saving,openEntryRequest,onSave,onSelectTab,onOpenSyncQueue,onRefresh,onOpenDuty,onOpenDraftChange,onRequestConsumed,
 })=>{
  const [query,setQuery]=useState('');
- const [filter,setFilter]=useState<'all'|'pending'|'received'|'today'>('all');
+ const [filter,setFilter]=useState<'all'|'pending'|'received'|'today'>('today');
  const [categoryFilter,setCategoryFilter]=useState<'all'|ObCategory>('all');
  const [chooserOpen,setChooserOpen]=useState(false);
  const [formCategory,setFormCategory]=useState<ObCategory|null>(null);
@@ -97,9 +98,9 @@ export const OccurrenceBookScreen:React.FC<OccurrenceBookScreenProps>=({
       </ScrollView>
     </KeyboardAvoidingView>
   </>:<>
-    <ScreenHeader title="Occurrence Book" rightAction={<Pressable accessibilityRole="button" accessibilityLabel={`Duty status: ${dutyStatus}`} onPress={onOpenDuty} style={styles.headerDutyButton}>
+    <ScreenHeader title="Occurrence Book" rightAction={<ScreenHeaderActionButton accessibilityLabel={`Duty status: ${dutyStatus}`} onPress={onOpenDuty}>
       <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.white}/>
-    </Pressable>}/>
+    </ScreenHeaderActionButton>}/>
     <ScrollView style={{flex:1}} contentContainerStyle={styles.listBody} keyboardShouldPersistTaps="handled">
       <View style={styles.heading}><Text style={styles.pageTitle}>Occurrence Book</Text><Text style={styles.subtitle}>Log patrols, visitors and daily events.</Text></View>
       {!isOnline?<InfoAlertBanner tone="offline" title="You're offline" body="You can view records on this phone and save new entries. Remote records will be available when you reconnect."/>:null}
@@ -146,6 +147,7 @@ export const OccurrenceBookScreen:React.FC<OccurrenceBookScreenProps>=({
         <Text style={styles.fieldLabel}>Original occurrence narrative</Text><Text selectable style={styles.detailNarrative}>{details.narrative}</Text>
         {details.createdAt?<><Text style={styles.fieldLabel}>Saved on this device</Text><Text style={styles.entryExcerpt}>{formatDate(details.createdAt)}</Text></>:null}
         {details.receivedAt?<><Text style={styles.fieldLabel}>Server received</Text><Text style={styles.entryExcerpt}>{formatDate(details.receivedAt)}</Text></>:null}
+        {details.linkedIncidentId||activeShiftId&&details.shiftId===activeShiftId?<SmartButton label={details.linkedIncidentId?'View linked incident':'Report as incident'} onPress={()=>onReportEntry(details)}/>:null}
         {details.error?<InfoAlertBanner title="Sync needs attention" tone="warning" body={details.error}/>:null}
         <View style={styles.notice}><Ionicons name="lock-closed-outline" size={20} color={COLORS.primary}/><Text style={styles.noticeText}>The original record is preserved. Corrections require an approved, audited workflow and are not yet available in this app.</Text></View>
         {details.status!=='received'?<SmartButton label="Review Sync Queue" onPress={()=>{setDetails(null);onOpenSyncQueue();}}/>:null}
@@ -161,7 +163,6 @@ function Field({label,value,onChange,placeholder,multiline=false}:{label:string;
 
 const styles=StyleSheet.create({
  root:{flex:1,backgroundColor:COLORS.surface},
- headerDutyButton:{width:48,height:48,borderRadius:24,alignItems:'center',justifyContent:'center'},
  listBody:{paddingHorizontal:17,paddingBottom:24,gap:12},heading:{marginBottom:4},pageTitle:{fontSize:26,fontFamily:FONTS.bold,color:COLORS.navy},subtitle:{fontSize:13,color:COLORS.textMuted,lineHeight:20},
  searchRow:{borderWidth:1,borderColor:COLORS.border,borderRadius:12,minHeight:48,paddingLeft:12,flexDirection:'row',alignItems:'center',gap:10},searchInput:{flex:1,color:COLORS.text,fontSize:14,paddingVertical:5},refresh:{width:48,height:48,alignItems:'center',justifyContent:'center',borderLeftWidth:1,borderLeftColor:COLORS.border},
  chips:{gap:7,paddingVertical:2},chip:{backgroundColor:COLORS.background,borderRadius:24,paddingVertical:10,paddingHorizontal:14,minHeight:48,justifyContent:'center'},chipActive:{backgroundColor:COLORS.primary},chipText:{fontSize:12,color:COLORS.textMuted},chipTextActive:{color:COLORS.white,fontFamily:FONTS.bold},

@@ -11,7 +11,10 @@ import {cachedOfflineRole,roleForProfile,type AccountRole} from './src/auth/role
 import {watchAuthLinks,type AuthFlow} from './src/auth/AuthLinks';
 import {SetPasswordScreen} from './src/auth/SetPasswordScreen';
 import {SupervisorWorkspace} from './src/SupervisorWorkspace';
-import {eraseLocalData,syncRecord,unsentCount,type Duty,type LocalRecord} from './src/offline';
+import {HandoverPanel} from './src/HandoverPanel';
+import {EndDutyScreen} from './src/screens/EndDutyScreen';
+import {obDateKey} from './src/occurrence-ui';
+import {eraseLocalData,listHandoverOps,listPhotos,syncRecord,unsentCount,type Duty,type LocalRecord} from './src/offline';
 import {localDateTime,withSubmissionLock,type IncidentDraft} from './src/incident-domain';
 import {loadDuty,loadGuardName,loadLocalRecords,loadServerHistory,loadServerIncidentDetail,retrySync,
  saveIncidentPayload,saveOccurrence,setDutyPresence,type DutyResult,type ServerIncident,type ServerIncidentUpdate,type ServerOccurrence} from './src/guard-service';
@@ -24,7 +27,7 @@ import {TodaysDutyScreen,ReportIncidentScreen,SubmissionStatusScreen,SyncQueueSc
  IncidentHistoryScreen,IncidentDetailsScreen,OccurrenceBookScreen,type OccurrenceDraft,type IncidentFormSubmitPayload,type SubmissionRecordSummary,
  type VerifiedShiftContext} from './src/screens';
 
-type Page='tabs'|'incidentForm'|'submission'|'queue'|'details';
+type Page='tabs'|'incidentForm'|'submission'|'queue'|'details'|'endDuty';
 type DetailsOrigin='history'|'queue'|'submission';
 type RoleState='loading'|'ready'|'error';
 const categoryLabel=(value:string)=>value?value.charAt(0).toUpperCase()+value.slice(1):'Report';
@@ -56,18 +59,26 @@ function InnerApp(){
  const [queueOrigin,setQueueOrigin]=useState<'tabs'|'submission'>('tabs');
  const [savedFallback,setSavedFallback]=useState<SubmissionRecordSummary|null>(null);
  const [obForm,setObForm]=useState(false),[obOpenRequest,setObOpenRequest]=useState(0);
+ const [sourceOb,setSourceOb]=useState<ObRow|null>(null);
+ const [handoverOps,setHandoverOps]=useState<Awaited<ReturnType<typeof listHandoverOps>>>([]);
+ const [photos,setPhotos]=useState<Awaited<ReturnType<typeof listPhotos>>>([]);
  const saving=useRef({current:false}).current,syncing=useRef(false),uidRef=useRef<string|null>(null);
  const uid=session?.user.id??null;
  const isOnline=connection===true;
  const siteNames=useMemo(()=>duty?{...remoteNames,[duty.site_id]:duty.site_name}:remoteNames,[remoteNames,duty]);
  const selectedLocal=records.find(record=>record.id===selectedId)??null;
  const pending=records.filter(record=>record.state!=='received');
- const failedCount=pending.filter(record=>record.state==='failed').length;
- const pendingCount=pending.length-failedCount;
+ const pendingOps=handoverOps.filter(o=>o.state!=='received');
+ const pendingEnd=handoverOps.some(o=>o.kind==='submit'&&o.slot===duty?.shift_id&&o.state!=='received');
+ const receivedEnd=handoverOps.some(o=>o.kind==='submit'&&o.slot===duty?.shift_id&&o.state==='received');
+ const endDutyRecorded=pendingEnd||receivedEnd;
+ const pendingPhotos=photos.filter(p=>p.state!=='uploaded');
+ const failedCount=[...pending,...pendingOps,...pendingPhotos].filter(record=>record.state==='failed').length;
+ const pendingCount=pending.length+pendingOps.length+pendingPhotos.length-failedCount;
 
  const refreshLocal=useCallback(async(id:string)=>{
-  const next=await loadLocalRecords(id);
-  if(uidRef.current===id)setRecords(next);
+  const [next,ops,photoRows]=await Promise.all([loadLocalRecords(id),listHandoverOps(id),listPhotos(id)]);
+  if(uidRef.current===id){setRecords(next);setHandoverOps(ops);setPhotos(photoRows);}
  },[]);
  const refreshServer=useCallback(async(id:string)=>{
   try{const result=await loadServerHistory(id);
@@ -77,10 +88,12 @@ function InnerApp(){
  const refresh=useCallback(async(id:string)=>{
   setInitialDataLoading(true);
   try{
-   const [dutyResult,local]=await Promise.all([loadDuty(id),loadLocalRecords(id)]);
+   const [dutyResult,local,ops,photoRows]=await Promise.all([loadDuty(id),loadLocalRecords(id),listHandoverOps(id),listPhotos(id)]);
    if(uidRef.current!==id)return;
    setDuty(dutyResult.duty);setDutySource(dutyResult.source);setDutyError(dutyResult.error);
    setRecords(local);
+   setHandoverOps(ops);
+   setPhotos(photoRows);
    const [name]=await Promise.all([loadGuardName(id).catch(()=>null),refreshServer(id)]);
    if(uidRef.current===id)setGuardName(name);
   }finally{if(uidRef.current===id)setInitialDataLoading(false);}
@@ -125,12 +138,28 @@ function InnerApp(){
  },[]);
  useEffect(()=>{
   uidRef.current=uid;
+  setHandoverOps([]);setPhotos([]);setSourceOb(null);
   setDuty(null);setDutySource('none');setDutyError(null);setRecords([]);setServerIncidents([]);setServerOccurrences([]);
   setRemoteNames({});setGuardName(null);setHistoryError(null);setDetailServer(null);setDetailError(null);
   setPage('tabs');setTab('today');setSelectedId(null);setSavedFallback(null);setMessage('');setPresenceBusy(false);
   if(!uid||accountRole!=='guard')return;
   void refresh(uid).catch(e=>setMessage(e instanceof Error?e.message:'Local records could not be loaded.'));
  },[uid,accountRole,refresh]);
+ useEffect(()=>{
+  if(!uid||!isOnline||accountRole!=='guard')return;
+  let current=true;
+  void retrySync(uid).then(async result=>{
+   if(current && (result.sent||result.failed))await refresh(uid);
+  }).catch(e=>{if(current)setMessage(String(e));});
+  return ()=>{current=false;};
+ },[uid,isOnline,accountRole,refresh]);
+ useEffect(()=>{
+  if(page==='endDuty'&&!duty&&!initialDataLoading){
+   const unsentEnd=handoverOps.some(o=>o.kind==='submit'&&o.state!=='received');
+   setPage('tabs');setTab('today');
+   setMessage(unsentEnd?'End duty is saved on this phone and is waiting to sync. Open the sync queue to review it.':'The active assignment is no longer available. Check the sync queue for the end-duty receipt.');
+  }
+ },[page,duty,initialDataLoading,handoverOps]);
  useEffect(()=>{
   const listener=AppState.addEventListener('change',value=>{
    if(value==='active'&&uid&&accountRole==='guard'){
@@ -153,6 +182,7 @@ function InnerApp(){
   if(page==='queue'){setPage(queueOrigin==='submission'?'submission':'tabs');return true;}
   if(page==='submission'){setTab('today');setPage('tabs');return true;}
   if(page==='incidentForm'){setTab('incidents');setPage('tabs');return true;}
+  if(page==='endDuty'){setTab('today');setPage('tabs');return true;}
   if(obForm){setObForm(false);return true;}
   return false;
  },[page,detailsOrigin,selectedLocal?.kind,queueOrigin,obForm]);
@@ -180,18 +210,19 @@ function InnerApp(){
     Alert.alert('Duty status not changed',error instanceof Error?error.message:'The server did not confirm this change.');
   }finally{setPresenceBusy(false);}
  }
- function openOffDutyHandover(){selectTab('handover');}
+ function openOffDutyHandover(){if(duty)setPage('endDuty');}
  function safetyInstructions(){
   Alert.alert('Emergency procedures',
    'Use approved emergency telephone or radio procedures for urgent assistance. Automated SOS reporting is not yet active in SmartOps.');
  }
- function startIncident(){if(!duty){setMessage('Reconfirm an active duty assignment before reporting.');return;}
-  setMessage('');setPage('incidentForm');}
+ function startIncident(){if(!duty||endDutyRecorded){setMessage('An active duty assignment is required before reporting.');return;}
+  setSourceOb(null);setMessage('');setPage('incidentForm');}
  async function saveIncident(payload:IncidentFormSubmitPayload){if(!uid)return;
   await withSubmissionLock(saving,async()=>{setBusy(true);setMessage('');
    try{const draft:IncidentDraft={category:payload.category,severity:payload.severity,eventAt:payload.eventAt,
      narrative:payload.description,actions:payload.actionsTaken??''};
-    const id=await saveIncidentPayload(duty,draft);
+    if(sourceOb && sourceOb.shiftId!==duty?.shift_id)throw new Error('The original shift must still be selected.');
+    const id=await saveIncidentPayload(duty,sourceOb?{...draft,eventAt:sourceOb.eventAt}:draft,sourceOb?.id,payload.photoUri);
     setSelectedId(id);setSavedFallback({id,recordType:'incident',categoryLabel:categoryLabel(payload.category),
      severity:payload.severity,description:payload.description,eventAt:payload.eventAt,createdAt:'',
      siteName:duty?.site_name??'Assigned site',deliveryStatus:'queued'});
@@ -263,7 +294,7 @@ function InnerApp(){
 
  const shiftContext:VerifiedShiftContext|null=duty?{
   shiftId:duty.shift_id,siteId:duty.site_id,siteName:duty.site_name,guardName:guardName??'Guard',
-  startedAt:duty.started_at,endedAt:duty.ended_at,status:'active',
+  startedAt:duty.started_at,endedAt:duty.ended_at,status:'active',post:duty.post,
   presenceStatus:dutySource==='server'?duty.presence_status??null:null,
   presenceUpdatedAt:dutySource==='server'?duty.presence_updated_at??null:null}:null;
  const localHistory=incidentHistoryItems(records,serverIncidents,siteNames);
@@ -273,7 +304,7 @@ function InnerApp(){
  const submission=selectedLocal?localSubmission(selectedLocal,siteNames):savedFallback;
  const obRows:ObRow[]=useMemo(()=>{
   const byId=new Map<string,ObRow>();
-  for(const remote of serverOccurrences){byId.set(remote.id,{id:remote.id,category:remote.category,narrative:remote.narrative,
+  for(const remote of serverOccurrences){byId.set(remote.id,{id:remote.id,shiftId:remote.shift_id,category:remote.category,narrative:remote.narrative,
     eventAt:remote.event_at,createdAt:'',receivedAt:remote.received_at,status:'received'});}
   for(const record of records){
    if(record.kind!=='occurrence')continue;
@@ -284,12 +315,15 @@ function InnerApp(){
     byId.set(record.id,{...remote,createdAt:record.created_at});
     continue;
    }
-   byId.set(record.id,{id:record.id,category:p.p_category??'other',narrative:p.p_narrative??'',
+   byId.set(record.id,{id:record.id,shiftId:record.shift_id,category:p.p_category??'other',narrative:p.p_narrative??'',
     eventAt:p.p_event_at??record.created_at,createdAt:record.created_at,receivedAt:record.received_at,
     status:record.state,error:record.error});
   }
-  return [...byId.values()];
- },[records,serverOccurrences]);
+  const links=new Map<string,string>();
+  for(const r of records){if(r.kind==='incident'){const source=recordPayload(r).p_source_occurrence_id;if(source)links.set(source,r.id);}}
+  for(const i of serverIncidents){if(i.source_occurrence_id)links.set(i.source_occurrence_id,i.id);}
+  return [...byId.values()].map(row=>({...row,linkedIncidentId:links.get(row.id)}));
+ },[records,serverOccurrences,serverIncidents]);
 
  if(authLoading||connection===null||(session && roleState==='loading' && !authFlow))
   return <View style={styles.loading}><ActivityIndicator color={COLORS.primary}/></View>;
@@ -307,66 +341,64 @@ function InnerApp(){
    </View>:
    accountRole==='supervisor'||accountRole==='admin' ? <SupervisorWorkspace userId={uid!} onSignOut={async()=>{const {error}=await supabase.auth.signOut();if(error)throw error;}}/>:
    accountRole==='guard' ? <>
-   {page==='tabs'&&tab==='today'&&<TodaysDutyScreen shiftContext={shiftContext} isCachedDuty={dutySource==='cache'}
+   {page==='tabs'&&tab==='today'&&<TodaysDutyScreen guardId={uid!} shiftContext={shiftContext} isCachedDuty={dutySource==='cache'}
+    endDutyPending={pendingEnd}
+    endDutyReceived={receivedEnd}
     dutyError={dutyError} notice={message||null} isLoadingShift={initialDataLoading} isOnline={isOnline}
-    pendingSyncCount={pendingCount} failedSyncCount={failedCount} recentActivity={activityItems(records,siteNames)}
+    todayCount={obRows.filter(r=>obDateKey(r.eventAt)===obDateKey(new Date().toISOString())).length}
+    profileName={guardName} successorAssigned={!!duty?.successor_shift_id}
+    openIncidentCount={isOnline&&!historyError&&!initialDataLoading?serverIncidents.filter(i=>i.status!=='resolved'&&i.status!=='closed').length:null}
+    pendingSyncCount={pendingCount} failedSyncCount={failedCount}
+    latestReceipt={records.reduce<string|null>((latest,r)=>
+      r.state==='received' && r.received_at && (!latest || Date.parse(r.received_at)>Date.parse(latest)) ? r.received_at : latest,null)}
+    recentActivity={activityItems(records.filter(r=>r.shift_id===shiftContext?.shiftId),siteNames)}
     activeTab="today" onSelectTab={selectTab} onReportIncident={startIncident}
-    onNewOccurrence={()=>{setTab('ob');setObOpenRequest(n=>n+1);setMessage('');}}
+    onNewOccurrence={()=>{if(!endDutyRecorded){setTab('ob');setObOpenRequest(n=>n+1);setMessage('');}}}
     onOpenMyIncidents={()=>selectTab('incidents')} onOpenSyncQueue={openQueue}
     onSelectActivityItem={item=>openDetails(item.id,'history')}
     onRefreshShift={()=>{if(uid)void refresh(uid).catch(e=>setMessage(String(e)));}} onSignOut={()=>void logout()}
     isUpdatingPresence={presenceBusy} onChangePresence={changePresence} onRequestOffDuty={openOffDutyHandover}
     onOpenHandover={()=>selectTab('handover')} onSafetyProcedures={safetyInstructions}/>}
-   {page==='tabs'&&tab==='incidents'&&<IncidentHistoryScreen incidents={localHistory} canReport={!!duty}
+   {page==='tabs'&&tab==='incidents'&&<IncidentHistoryScreen incidents={localHistory} canReport={!!duty&&!endDutyRecorded}
     loadError={historyError} isOnline={isOnline} unsyncedCount={pending.length} activeTab="incidents"
     onSelectTab={selectTab} onSelectIncident={id=>openDetails(id,'history')}
     onReportNewIncident={startIncident} onOpenSyncQueue={openQueue}
     onRefresh={()=>{if(uid)void refreshServer(uid);}}/>}
    {page==='tabs'&&tab==='ob'&&<OccurrenceBookScreen
-    rows={obRows} isOnline={isOnline} hasDuty={!!duty} dutyStatus={duty?.presence_status==='on_break'?'On Break':'On Duty'}
+    rows={obRows} isOnline={isOnline} hasDuty={!!duty&&!endDutyRecorded} dutyStatus={duty?.presence_status==='on_break'?'On Break':'On Duty'}
     pendingCount={pending.length} error={message||historyError} saving={busy} openEntryRequest={obOpenRequest}
+    activeShiftId={duty?.shift_id} onReportEntry={row=>{if(row.linkedIncidentId){openDetails(row.linkedIncidentId,'history');return;}setSourceOb(row);setPage('incidentForm');}}
     onSave={saveOb} onSelectTab={selectTab} onOpenSyncQueue={openQueue}
     onOpenDuty={()=>selectTab('today')} onOpenDraftChange={setObForm} onRequestConsumed={()=>setObOpenRequest(0)}
     onRefresh={()=>{if(uid)void refreshServer(uid);}}/>}
    {page==='tabs'&&tab==='handover'&&<View style={styles.panel}>
     <AppHeader title="Handover" subtitle="Prepare for shift change" isOnline={isOnline} pendingCount={pending.length} onPressSyncBadge={openQueue}/>
     <ScrollView contentContainerStyle={styles.panelContent}>
-     <InfoAlertBanner tone="warning" title="Manual handover required" body="Electronic handover submission and shift closure are not yet enabled. Follow approved telephone, radio and written handover procedures. Your shift remains active."/>
-     <SurfaceCard>
-      <Text style={styles.title}>Current assignment</Text>
-      <Text style={styles.body}>{duty?.site_name??'No active site verified'}</Text>
-      <Text style={styles.muted}>Shift started: {formatTimestamp(duty?.started_at)}</Text>
-      <Text style={styles.muted}>Duty status: {duty?.presence_status==='on_break'?'On Break':duty?.presence_status==='on_duty'?'On Duty':'Unverified'}</Text>
-     </SurfaceCard>
-     <SurfaceCard>
-      <Text style={styles.title}>Before you hand over</Text>
-      <Text style={styles.body}>1. Brief the incoming guard about incidents, visitors, keys and equipment.</Text>
-      <Text style={styles.body}>2. Record any outstanding safety or security issues through approved procedures.</Text>
-      <Text style={styles.body}>3. Ensure the next guard or supervisor confirms receipt using existing company processes.</Text>
-     </SurfaceCard>
-     <SurfaceCard>
-      <Text style={styles.title}>Reports on this phone</Text>
-      <Text style={styles.body}>{pending.length>0?`${pending.length} local report(s) do not yet have a server receipt.`:'No unsent local reports on this phone.'}</Text>
-      <Text style={styles.muted}>This count does not establish that every outstanding issue at the site has been resolved.</Text>
-      <SmartButton label="Review Sync Queue" variant="secondary" onPress={openQueue}/>
-      <SmartButton label="Review My Incidents" variant="secondary" onPress={()=>selectTab('incidents')}/>
-     </SurfaceCard>
-     <Text style={styles.muted}>The Complete Shift button will be introduced only when verified handover submission and authorization are implemented. No shift status is changed from this screen.</Text>
+     <HandoverPanel key={uid} actor={uid!} duty={duty} online={isOnline} incidents={serverIncidents} onDelivered={()=>isOnline?refresh(uid!):refreshLocal(uid!)}/>
     </ScrollView><BottomNavBar activeTab="handover" onSelectTab={selectTab} unsyncedCount={pending.length}/>
    </View>}
    {page==='incidentForm'&&<ReportIncidentScreen siteName={duty?.site_name??'No verified site'}
+    initialEventAt={sourceOb?.eventAt??new Date().toISOString()} initialNotes={sourceOb?.narrative} post={duty?.post}
     shiftStartedAt={duty?.started_at} isOnline={isOnline} pendingCount={pending.length}
-    initialEventAt={localDateTime(new Date().toISOString())} isSubmitting={busy} storageError={message||null}
+    isSubmitting={busy} storageError={message||null}
     onSubmitIncident={saveIncident} onCancel={()=>{setPage('tabs');setTab('incidents');}}
     onOpenSyncQueue={openQueue}/>}
+   {page==='endDuty'&&duty&&<EndDutyScreen actor={uid!} duty={duty} guardName={guardName} online={isOnline}
+    records={records} operations={handoverOps} incidents={serverIncidents} onRefresh={()=>isOnline?refresh(uid!):refreshLocal(uid!)}
+    onBack={()=>{setTab('today');setPage('tabs');}} onQueue={openQueue}/>}
    {page==='submission'&&submission&&<SubmissionStatusScreen record={submission} isOnline={isOnline}
     isSyncing={syncBusy} onSyncNow={()=>syncNow()} onOpenSyncQueue={openQueue}
     onOpenDetails={()=>{if(selectedId)openDetails(selectedId,'submission');}}
     onBackToToday={()=>{setTab('today');setPage('tabs');}}/>}
-   {page==='queue'&&<SyncQueueScreen items={records.map(record=>localQueueItem(record,siteNames))}
+   {page==='queue'&&<SyncQueueScreen items={[...records.map(record=>localQueueItem(record,siteNames)),...photos.map(p=>({
+    id:p.id,recordType:'incident' as const,title:'Incident photo',description:p.state==='uploaded'?'Photo uploaded':p.state==='uploading'?'Uploading photo':p.state==='failed'?'Photo upload failed':'Photo waiting to upload',
+    eventAt:'',createdAt:'',siteName:'Incident evidence',deliveryStatus:(p.state==='uploaded'?'received':p.state==='uploading'?'sending':p.state) as 'received'|'sending'|'queued'|'failed',lastError:p.error})),...handoverOps.map(o=>({
+    id:o.id,recordType:'handover' as const,title:o.kind==='submit'?'Shift handover':'Handover acknowledgement',
+    description:o.kind==='submit'?String(JSON.parse(o.payload).p_notes):'Incoming guard receipt',eventAt:'',createdAt:'',
+    siteName:'Assigned handover',deliveryStatus:o.state,lastError:o.error}))]}
     isOnline={isOnline} isSyncing={syncBusy} lastSyncSummary={syncSummary}
-    onSyncAll={()=>syncNow()} onRetryItem={id=>syncNow(id)}
-    onSelectItem={item=>openDetails(item.id,'queue')} onBack={()=>goBack()}/>}
+    onSyncAll={()=>syncNow()} onRetryItem={id=>syncNow(handoverOps.some(o=>o.id===id)?undefined:photos.find(p=>p.id===id)?.incident_id??id)}
+    onSelectItem={item=>item.recordType==='handover'?selectTab('handover'):openDetails(photos.find(p=>p.id===item.id)?.incident_id??item.id,'queue')} onBack={()=>goBack()}/>}
    {page==='details'&&selectedLocal?.kind==='occurrence'&&<View style={styles.panel}>
     <AppHeader title="Occurrence Details" subtitle={selectedLocal.id} isOnline={isOnline} onBack={()=>goBack()}/>
     <ScrollView contentContainerStyle={styles.panelContent}><SurfaceCard>

@@ -8,6 +8,7 @@ export const supabase=createClient(url,key);
 export type Site={id:string;name:string;code:string};
 export type Incident={id:string;public_number:string;site_id:string;category:string;severity:string;description:string;status:string;reported_at:string;received_at:string};
 export type Occurrence={id:string;site_id:string;category:string;narrative:string;event_at:string;received_at:string};
+export type HomeShift={post?:string|null;checked_in_at?:string|null;id:string;guard_id:string;started_at:string;ended_at:string|null;status:string;presence_status:string|null};
 export type SiteFeed={incidents:Incident[];occurrences:Occurrence[]};
 
 export async function authorizedSites(userId:string):Promise<Site[]> {

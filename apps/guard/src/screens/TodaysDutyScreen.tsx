@@ -1,12 +1,14 @@
 import React, {useEffect,useState} from 'react';
+import {supabase} from '../api';
+import {HomeActions, HomeQuickAction, StatCard, homeStyles} from '../HomeQuickAction';
 import {
-  ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet,
+  ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet,
   Text, View,
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  BottomNavBar, COLORS, type DeliveryStatus, FONTS, HomeHeader,
+  BottomNavBar, COLORS, type DeliveryStatus, FONTS, HomeHeader, HomeHeaderControl,
   formatTimestamp, type GuardTabKey, InfoAlertBanner,
 } from '../components';
 import {
@@ -15,6 +17,7 @@ import {
 
 export interface VerifiedShiftContext {
   shiftId: string;
+  post?:string|null;
   siteId: string;
   siteCode?: string;
   siteName: string;
@@ -40,6 +43,13 @@ export interface ActivitySummaryItem {
 }
 
 export interface TodaysDutyScreenProps {
+  guardId: string;
+  todayCount:number;
+  endDutyPending?:boolean;
+  endDutyReceived?:boolean;
+  profileName:string|null;
+  successorAssigned:boolean;
+  openIncidentCount:number|null;
   shiftContext: VerifiedShiftContext | null;
   isCachedDuty?: boolean;
   dutyError?: string | null;
@@ -48,6 +58,7 @@ export interface TodaysDutyScreenProps {
   isOnline: boolean;
   isUpdatingPresence?: boolean;
   pendingSyncCount: number;
+  latestReceipt: string|null;
   failedSyncCount?: number;
   recentActivity: ActivitySummaryItem[];
   activeTab?: GuardTabKey;
@@ -78,28 +89,6 @@ function timeOnly(iso?:string|null) {
     ? parsed.toLocaleTimeString('en-ZW',{hour:'2-digit',minute:'2-digit'}) : '—';
 }
 
-function QuickAction({title,subtitle,name,tone,onPress,disabled=false}: {
-  title:string;subtitle:string;name:IconName;tone:'green'|'red'|'blue'|'slate';onPress:()=>void;disabled?:boolean;
-}) {
-  const meta = {
-    green:{color:COLORS.primary,bg:'#EDF6F2'},
-    red:{color:COLORS.danger,bg:'#FFF1F0'},
-    blue:{color:'#2374C6',bg:'#ECF5FF'},
-    slate:{color:'#536576',bg:'#F0F3F5'},
-  }[tone];
-  return <Pressable accessibilityRole="button" accessibilityLabel={title}
-    accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
-    style={({pressed})=>[styles.quickAction,{backgroundColor:meta.bg},disabled&&styles.disabled,pressed&&styles.pressed]}>
-    <View style={[styles.quickIcon,{backgroundColor:meta.color}]}>
-      <Symbol name={name} color={COLORS.white} size={23}/>
-    </View>
-    <View style={styles.quickCopy}>
-      <Text numberOfLines={1} style={styles.quickTitle}>{title}</Text>
-      <Text numberOfLines={2} style={styles.quickSubtitle}>{subtitle}</Text>
-    </View>
-    <Symbol name="chevron-forward-outline" color={COLORS.textMuted} size={16}/>
-  </Pressable>;
-}
 
 function ActivityItem({item,onPress}: {item:ActivitySummaryItem;onPress:()=>void}) {
   const isIncident = item.recordType==='incident';
@@ -123,8 +112,8 @@ function ActivityItem({item,onPress}: {item:ActivitySummaryItem;onPress:()=>void
 }
 
 export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
-  shiftContext,isCachedDuty=false,dutyError=null,notice=null,isLoadingShift=false,
-  isOnline,isUpdatingPresence=false,pendingSyncCount,failedSyncCount=0,recentActivity,
+  guardId,todayCount,endDutyPending=false,endDutyReceived=false,profileName,successorAssigned,openIncidentCount,shiftContext,isCachedDuty=false,dutyError=null,notice=null,isLoadingShift=false,
+  isOnline,isUpdatingPresence=false,pendingSyncCount,failedSyncCount=0,recentActivity,latestReceipt,
   activeTab='today',onSelectTab,onReportIncident,onNewOccurrence,onOpenMyIncidents,
   onOpenSyncQueue,onOpenHandover,onSafetyProcedures,onChangePresence,onRequestOffDuty,
   onSelectActivityItem,onRefreshShift,onSignOut,
@@ -138,72 +127,70 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
     const timer=setInterval(()=>setClockNow(Date.now()),30_000);
     return ()=>clearInterval(timer);
   },[]);
+  const [scheduled,setScheduled]=useState<{id:string;guard:string;site:string;post?:string;start:string}|null>(null);
+  useEffect(()=>{
+    let current=true;
+    setScheduled(null);
+    if(isOnline && !shiftContext && !isLoadingShift){
+      const now=new Date().toISOString();
+      void supabase.from('shifts').select('*,sites(name)').eq('guard_id',guardId)
+        .eq('status','scheduled').or('ended_at.is.null,ended_at.gt.'+now)
+        .order('started_at').limit(1).maybeSingle().then(({data})=>{
+          if(current && data){
+            const site=Array.isArray(data.sites)?data.sites[0]:data.sites;
+            setScheduled({id:data.id,guard:guardId,site:site?.name??'Assigned site',post:data.post,start:data.started_at});
+          }
+        });
+    }
+    return ()=>{current=false;};
+  },[guardId,isOnline,isLoadingShift,shiftContext?.shiftId]);
+  const nextShift=isOnline && scheduled?.guard===guardId?scheduled:null;
   const totalUnsent=pendingSyncCount+failedSyncCount;
   const presence: DutyPresence|null = !isCachedDuty ? (shiftContext?.presenceStatus??null) : null;
-  const canChange = canChangeDutyPresence({shiftId:shiftContext?.shiftId,isOnline,isCachedDuty,isBusy:isUpdatingPresence});
+  const canChange = canChangeDutyPresence({shiftId:shiftContext?.shiftId,isOnline,isCachedDuty,isBusy:isUpdatingPresence||endDutyPending||endDutyReceived});
   const statusLabel = !shiftContext?'No Shift':dutyPresenceLabel(presence);
   const onBreak=presence==='on_break';
   const breakStartedAt=onBreak?shiftContext?.presenceUpdatedAt:null;
   const breakDuration=onBreak?breakDurationLabel(breakStartedAt,clockNow):null;
   const dotColor = presence==='on_duty'?COLORS.success:onBreak?COLORS.warning:COLORS.textMuted;
-  const [firstName] = (shiftContext?.guardName || 'Officer').split(/\s+/);
+  const [firstName] = (profileName || shiftContext?.guardName || 'Officer').split(/\s+/);
   const choosePresence=(next:DutyPresence)=>{
     setMenuOpen(false);
     if(next!==presence && canChange)void onChangePresence(next);
   };
 
-  return <View style={styles.root}>
+  return <View style={[styles.root,{backgroundColor:COLORS.background}]}>
     <HomeHeader
-      greeting="Good day, Officer"
+      greeting={new Date().getHours()<12?'Good morning':new Date().getHours()<18?'Good afternoon':'Good evening'}
       name={firstName}
-      subtitle="Stay alert. Stay safe."
-      brandAction={<Pressable accessibilityRole="button" accessibilityLabel="View shift details"
-        onPress={()=>{setSheetMode('details');setMenuOpen(true);}} style={({pressed})=>[styles.headerAction,pressed&&styles.pressed]}>
-        <Symbol name="person-circle-outline" color={COLORS.white} size={27}/>
-      </Pressable>}
-      contextAction={<Pressable accessibilityRole="button" accessibilityLabel={`Duty status: ${statusLabel}. Open duty controls`}
-        accessibilityState={{expanded:menuOpen}} onPress={()=>{setSheetMode('status');setMenuOpen(true);}}
-        style={({pressed})=>[styles.dutyPill,onBreak&&styles.dutyPillBreak,pressed&&styles.pressed]}>
-        {isUpdatingPresence?<ActivityIndicator size="small" color={COLORS.primary}/>:<View style={[styles.statusDot,{backgroundColor:dotColor}]}/>}
-        <Text style={[styles.dutyPillLabel,onBreak&&styles.dutyPillBreakText]} numberOfLines={1}>{isUpdatingPresence?'Updating…':statusLabel}</Text>
-        <Symbol name="chevron-down-outline" color={COLORS.primary} size={17}/>
-      </Pressable>}
+      subtitle={shiftContext?.siteName??nextShift?.site??'Guard workspace'}
+      brandAction={<HomeHeaderControl kind="icon" accessibilityLabel="View shift details"
+        onPress={()=>{setSheetMode('details');setMenuOpen(true);}}>
+        <View style={{width:32,height:32,borderRadius:16,backgroundColor:'#285748',alignItems:'center',justifyContent:'center'}}>
+          <Text style={{color:'white',fontWeight:'700',fontSize:12}}>{(shiftContext?.guardName||'Guard').trim().split(/\s+/).slice(0,2).map(word=>word[0]).join('').toUpperCase()}</Text>
+        </View>
+      </HomeHeaderControl>}
     />
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
       {dutyError?<InfoAlertBanner tone="danger" title="Duty status needs attention" body={dutyError}/>:null}
       {notice?<InfoAlertBanner tone="warning" title="Action needs attention" body={notice}/>:null}
+      {endDutyPending?<InfoAlertBanner tone="offline" title="End duty waiting for server" body="The end-duty request is saved on this phone. Open End duty to review or retry."/>:null}
+      {endDutyReceived?<InfoAlertBanner tone="success" title="End duty received" body="The server has recorded the end of this shift. Refresh to load your current assignment."/>:null}
 
-      <View style={[styles.assignmentCard,onBreak&&styles.assignmentCardOnBreak]}>
-        <View style={styles.assignmentHead}>
-          <View style={styles.assignmentIcon}><Symbol name="business-outline" size={24} color={COLORS.navy}/></View>
-          <View style={styles.assignmentNameBlock}>
-            <Text style={styles.label}>Current Assignment</Text>
-            <Text style={styles.siteName} numberOfLines={2}>
-              {shiftContext?.siteName??(isLoadingShift?'Loading assignment…':'No active assignment')}
-            </Text>
-          </View>
-          {shiftContext?<View style={[styles.activeTag,onBreak&&styles.activeTagOnBreak]}><Text style={[styles.activeTagText,onBreak&&styles.activeTagTextOnBreak]}>Active Shift</Text></View>:null}
+      <View style={{padding:12,gap:5,backgroundColor:'#E8F1EB',borderColor:'#C5DCCD',borderWidth:1,borderRadius:13,marginBottom:9}}>
+        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open duty controls" onPress={()=>{setSheetMode('status');setMenuOpen(true);}} style={{minHeight:48,justifyContent:'center'}}>
+            <Text style={{color:COLORS.primary,fontWeight:'700'}}>● {shiftContext?(isCachedDuty?'Cached duty':statusLabel):'Off duty'}</Text>
+          </Pressable>
+          <Text style={styles.label}>{shiftContext?'Started '+timeOnly(shiftContext.startedAt):'Assignment'}</Text>
         </View>
-        {shiftContext?<View style={styles.assignmentFacts}>
-          <View style={styles.fact}>
-            <Symbol name="calendar-outline" size={19} color={COLORS.primary}/>
-            <Text style={styles.factLabel}>Shift</Text>
-            <Text style={styles.factValue} numberOfLines={1}>Active</Text>
-          </View>
-          <View style={[styles.fact,styles.factMiddle]}>
-            <Symbol name="time-outline" size={19} color={COLORS.primary}/>
-            <Text style={styles.factLabel}>Started</Text>
-            <Text style={styles.factValue}>{timeOnly(shiftContext.startedAt)}</Text>
-          </View>
-          <View style={styles.fact}>
-            <Symbol name="location-outline" size={19} color={COLORS.primary}/>
-            <Text style={styles.factLabel}>Ends</Text>
-            <Text style={styles.factValue}>{timeOnly(shiftContext.endedAt)}</Text>
-          </View>
-        </View>:<Text style={styles.noDutyNote}>
-          {isLoadingShift?'Checking your assigned shift.':'An authorized active shift is required to record incidents and OB entries.'}
-        </Text>}
-        {isCachedDuty?<Text style={styles.cachedNote}>Offline: assignment last verified on this device. Duty presence cannot be changed.</Text>:null}
+        <Text style={styles.siteName}>{shiftContext?.siteName??nextShift?.site??(isLoadingShift?'Checking assignment…':'No active assignment')}</Text>
+        <Text style={styles.label}>{nextShift?'Scheduled '+formatTimestamp(nextShift.start):shiftContext?.endedAt?'Ends '+timeOnly(shiftContext.endedAt):shiftContext?'Active shift':'Awaiting duty activation'}</Text>
+        {(shiftContext?.post??nextShift?.post)?<Text style={styles.label}>Post · {shiftContext?.post??nextShift?.post}</Text>:null}
+        <Pressable disabled={!shiftContext&&(!nextShift||!isOnline||Date.parse(nextShift.start)>Date.now())} accessibilityRole="button"
+          onPress={async()=>{if(shiftContext){onRequestOffDuty();return;}if(nextShift){const {error}=await supabase.rpc('start_guard_duty',{p_shift_id:nextShift.id});if(error)Alert.alert('Duty start failed',error.message);else onRefreshShift?.();}}} style={{marginTop:4,minHeight:48,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:shiftContext?'white':'#537668'}}>
+          <Text style={{fontWeight:'700',color:shiftContext?COLORS.primary:'white'}}>{shiftContext?(endDutyPending||endDutyReceived?'Review end duty':'End duty'):'Start duty'}</Text>
+        </Pressable>
       </View>
 
       {onBreak?<View style={styles.breakNotice} accessibilityRole="text">
@@ -219,34 +206,41 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
       </View>:null}
 
       <Pressable accessibilityRole="button" onPress={onOpenSyncQueue} style={({pressed})=>[
-        styles.syncStrip,pressed&&styles.pressed,
+        styles.syncStrip,{backgroundColor:isOnline?'#E8F3ED':'#FFF0DB'},pressed&&styles.pressed,
       ]}>
         <View style={styles.syncIcon}><Symbol name={totalUnsent?'cloud-upload-outline':'cloud-done-outline'} size={24} color={totalUnsent?COLORS.warning:COLORS.success}/></View>
         <View style={styles.syncCopy}>
-          <Text style={styles.syncTitle}>{failedSyncCount?`${failedSyncCount} sync failed`:
-            totalUnsent?`${totalUnsent} pending sync`:'No unsent local reports'}</Text>
+          <Text style={styles.syncTitle}>{!isOnline?`Offline · ${pendingSyncCount} queued${failedSyncCount ? ' · '+failedSyncCount+' failed' : ''}`:failedSyncCount?`${failedSyncCount} sync failed`:
+            totalUnsent?`${totalUnsent} pending sync`:isLoadingShift?'Checking outbox…':latestReceipt?'All records synced':'No unsent local reports'}</Text>
           <Text style={styles.syncSub} numberOfLines={2}>{totalUnsent?
-            'Reports not yet received by the supervisor':'This device’s encrypted outbox is clear'}
-            {!isOnline?' · Offline':''}
+            'Saved on this device. Tap to see the queue.':latestReceipt?'Last receipt at '+timeOnly(latestReceipt):'View sync queue'}
           </Text>
         </View>
         <Symbol name="chevron-forward-outline" color={COLORS.navy} size={20}/>
       </Pressable>
 
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <View style={styles.actionGrid}>
-        <QuickAction title="New OB Entry" subtitle="Log patrols, visitors, etc." name="document-text-outline"
-          tone="green" disabled={!shiftContext} onPress={onNewOccurrence}/>
-        <QuickAction title="Report Incident" subtitle="Security, safety or other" name="warning-outline"
-          tone="red" disabled={!shiftContext} onPress={onReportIncident}/>
-        <QuickAction title="My Incidents" subtitle="View reported incidents" name="reader-outline"
-          tone="blue" onPress={onOpenMyIncidents}/>
-        <QuickAction title="Handover" subtitle="Incoming / outgoing shift" name="people-outline"
-          tone="slate" onPress={onOpenHandover}/>
-      </View>
+      <Pressable accessibilityRole="button" onPress={()=>onSelectTab('ob')} style={styles.syncStrip}><View><Text style={styles.syncTitle}>Today’s log</Text><Text>{todayCount} occurrence entries · Open log</Text></View></Pressable>
+      <Text style={[homeStyles.heading, {marginBottom: 6}]}>Quick actions</Text>
+      <HomeActions>
+        <HomeQuickAction title="Report incident" subtitle={shiftContext?'Record an incident':'Start duty to report'} icon="warning-outline"
+          color={COLORS.teal} disabled={!shiftContext||endDutyPending||endDutyReceived} onPress={onReportIncident}/>
+        <HomeQuickAction title="Emergency help" subtitle="Call or radio procedures" icon="medkit-outline" color={COLORS.danger} onPress={onSafetyProcedures}/>
+        <HomeQuickAction title="New OB entry" subtitle={shiftContext?'Log a site occurrence':'Start duty to log'} icon="book-outline"
+          color={COLORS.primary} disabled={!shiftContext||endDutyPending||endDutyReceived} onPress={onNewOccurrence}/>
+        <HomeQuickAction title="Shift handover" subtitle="Review or submit" icon="swap-horizontal-outline" onPress={onOpenHandover}/>
+        <HomeQuickAction title="My site" subtitle={shiftContext?.siteName??nextShift?.site??'No assignment'} icon="business-outline"
+          onPress={()=>Alert.alert(shiftContext?.siteName??nextShift?.site??'No assignment',shiftContext?.post??nextShift?.post??'Post unavailable')}/>
+        <HomeQuickAction title="Shift details" subtitle="Assignment and hours" icon="time-outline" onPress={()=>{setSheetMode('details');setMenuOpen(true);}}/>
+      </HomeActions>
+      <Text style={[homeStyles.heading,{marginVertical:12}]}>Operational overview</Text>
+      <HomeActions>
+        <StatCard label="Open reports in history" value={openIncidentCount??'—'}/>
+        <StatCard label="Awaiting sync" value={totalUnsent}/>
+      </HomeActions>
+      {successorAssigned&&<Text style={[styles.syncSub,{marginTop:8}]}>Incoming guard assigned for handover</Text>}
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
+      <View style={[styles.sectionHeader, {marginTop: 16}]}>
+        <Text style={[homeStyles.heading, {marginBottom: 8}]}>Recent Activity</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Open occurrence book" onPress={()=>onSelectTab('ob')}>
           <Text style={styles.seeAll}>Occurrence Book <Symbol name="chevron-forward" size={14} color={COLORS.textMuted}/></Text>
         </Pressable>
@@ -255,22 +249,15 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
         {recentActivity.length ? recentActivity.slice(0,3).map(item=>
           <ActivityItem key={item.id} item={item} onPress={()=>onSelectActivityItem(item)}/>) :
           <View style={styles.emptyActivity}><Symbol name="time-outline" color={COLORS.textMuted}/>
-            <Text style={styles.emptyText}>No incident or OB activity recorded on this phone yet.</Text>
+            <Text style={styles.emptyText}>{isLoadingShift?'Loading activity…':'No entries for this shift yet.'}</Text>
           </View>}
       </View>
 
-      <Text style={styles.sectionTitle}>Safety</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel="Read emergency procedures" onPress={onSafetyProcedures}
-        style={({pressed})=>[styles.safetyCard,pressed&&styles.pressed]}>
-        <View style={styles.sosSymbol}><Text style={styles.sosText}>SOS</Text></View>
-        <View style={styles.safetyCopy}>
-          <Text style={styles.safetyTitle}>Emergency Procedures</Text>
-          <Text style={styles.safetySub}>Call or radio for assistance. Automatic SOS is not yet active.</Text>
-        </View>
-        <Symbol name="chevron-forward-outline" size={20} color={COLORS.danger}/>
-      </Pressable>
-      <Text style={styles.safetyReminder}>Use approved emergency telephone/radio procedures. In-app reporting does not dispatch assistance.</Text>
     </ScrollView>
+    <View style={{marginHorizontal:16,marginVertical:8,padding:7,minHeight:48,justifyContent:'center',backgroundColor:'#FFF1F0',borderWidth:1,borderColor:'#F1C1C3',borderRadius:9}}>
+      <Text style={{textAlign:'center',color:COLORS.danger,fontWeight:'700'}}>Call control room</Text>
+      <Text style={{textAlign:'center',fontSize:10,color:COLORS.textMuted}}>Number unavailable · Use approved radio procedures</Text>
+    </View>
     <BottomNavBar activeTab={activeTab} onSelectTab={onSelectTab} unsyncedCount={totalUnsent}/>
 
     <Modal visible={menuOpen} transparent animationType="slide" onRequestClose={()=>setMenuOpen(false)} statusBarTranslucent>
@@ -354,7 +341,6 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
 
 const styles=StyleSheet.create({
   root:{flex:1,backgroundColor:COLORS.surface},
-  dutyPill:{flexDirection:'row',minHeight:44,alignItems:'center',gap:7,paddingHorizontal:11,borderRadius:18,backgroundColor:'#F2F5F6',maxWidth:160},
   dutyPillLabel:{fontFamily:FONTS.medium,color:COLORS.primary,fontSize:12,fontWeight:'600'},
   dutyPillBreak:{backgroundColor:'#FFF0D4'},dutyPillBreakText:{color:COLORS.warning},
   statusDot:{height:10,width:10,borderRadius:5},
@@ -380,15 +366,10 @@ const styles=StyleSheet.create({
   breakNoticeDescription:{fontFamily:FONTS.regular,fontSize:11,color:COLORS.textMuted,marginTop:2},
   resumeButton:{borderRadius:9,backgroundColor:COLORS.primary,paddingHorizontal:11,paddingVertical:10,minHeight:42,justifyContent:'center'},
   resumeText:{color:COLORS.white,fontFamily:FONTS.bold,fontWeight:'700',fontSize:12},
-  syncStrip:{flexDirection:'row',alignItems:'center',backgroundColor:'#F5F7F8',borderRadius:13,padding:12,gap:12,marginBottom:20,minHeight:69},
-  syncIcon:{width:43,height:43,borderRadius:22,backgroundColor:'#E7F5EE',alignItems:'center',justifyContent:'center'},
+  syncStrip:{flexDirection:'row',alignItems:'center',borderRadius:10,padding:8,gap:8,marginBottom:10,minHeight:48},
+  syncIcon:{width:28,alignItems:'center',justifyContent:'center'},
   syncCopy:{flex:1},syncTitle:{fontFamily:FONTS.bold,fontWeight:'700',fontSize:14,color:COLORS.navy},
   syncSub:{fontFamily:FONTS.regular,fontSize:11,color:COLORS.textMuted,lineHeight:16,marginTop:2},
-  sectionTitle:{fontFamily:FONTS.bold,fontWeight:'700',fontSize:17,color:COLORS.navy,marginBottom:11},
-  actionGrid:{flexDirection:'row',flexWrap:'wrap',gap:9,marginBottom:20},
-  quickAction:{flexGrow:1,flexBasis:'47%',minWidth:'47%',minHeight:94,borderRadius:13,padding:11,flexDirection:'row',alignItems:'center',gap:8},
-  quickIcon:{width:34,height:34,borderRadius:18,alignItems:'center',justifyContent:'center'},
-  quickCopy:{flex:1,minWidth:0,gap:3},quickTitle:{fontSize:12,fontFamily:FONTS.bold,fontWeight:'700',color:COLORS.navy},
   quickSubtitle:{fontSize:10,color:COLORS.textMuted,fontFamily:FONTS.regular,lineHeight:14},
   sectionHeader:{flexDirection:'row',alignItems:'baseline',justifyContent:'space-between',gap:6},
   seeAll:{color:COLORS.textMuted,fontSize:11,fontFamily:FONTS.regular},

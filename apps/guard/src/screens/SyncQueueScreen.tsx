@@ -21,7 +21,7 @@ import {
 
 export interface SyncQueueItem {
   id: string;
-  recordType: 'incident' | 'occurrence';
+  recordType: 'incident' | 'occurrence' | 'handover';
   title: string;
   description: string;
   eventAt: string;
@@ -186,6 +186,15 @@ export const SyncQueueScreen: React.FC<SyncQueueScreenProps> = ({
             </SurfaceCard>
           ))
         )}
+        {items.some(item=>item.title==='Incident photo'&&item.deliveryStatus==='received')?
+          <View style={{marginTop:16}}>
+            <Text style={styles.sectionTitle}>Uploaded photos</Text>
+            {items.filter(item=>item.title==='Incident photo'&&item.deliveryStatus==='received').map(item=>
+              <SurfaceCard key={item.id} style={styles.queueCard}>
+                <Text style={styles.itemTitle}>Incident photo</Text>
+                <Text style={styles.itemDesc}>Uploaded</Text>
+              </SurfaceCard>)}
+          </View>:null}
       </ScrollView>
     </View>
   );

@@ -58,7 +58,7 @@ export function obTimeKey(iso:string):string {
  const d=new Date(iso);if(!Number.isFinite(d.getTime()))return '';
  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
-export type ObRow={id:string;category:string;narrative:string;eventAt:string;createdAt:string;receivedAt:string|null;status:'queued'|'sending'|'failed'|'received';error?:string|null;};
+export type ObRow={id:string;shiftId?:string;linkedIncidentId?:string;category:string;narrative:string;eventAt:string;createdAt:string;receivedAt:string|null;status:'queued'|'sending'|'failed'|'received';error?:string|null;};
 export function filterObRows(rows:ObRow[],q:string,filter:'all'|'pending'|'received'|'today',category:'all'|ObCategory,today:string):ObRow[]{
  const normalized=q.trim().toLowerCase();
  return rows.filter(row=>{
