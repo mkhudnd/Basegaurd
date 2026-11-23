@@ -3,6 +3,7 @@ import {Alert,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
 import * as Crypto from 'expo-crypto';
 import {COLORS,FONTS,ScreenHeader,SmartButton,SurfaceCard,formatTimestamp} from '../components';
 import {enqueueHandover} from '../handover-outbox';
+import {getEndDutyStatus} from '../end-duty-state';
 import {db,syncRecords,type Duty,type LocalRecord} from '../offline';
 import {supabase} from '../api';
 
@@ -18,10 +19,13 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
  const [refs,setRefs]=useState<string[]>([]);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
+ const [savedLocally,setSavedLocally]=useState(false);
  const [now,setNow]=useState(Date.now());
  const [incoming,setIncoming]=useState<string|null>(null);
  const lock=useRef(false);
- const operation=operations.find(o=>o.kind==='submit'&&o.slot===duty.shift_id);
+ const endDutyStatus=getEndDutyStatus(operations,duty.shift_id);
+ const legacyHandover=endDutyStatus==='legacy-handover';
+ const operation=legacyHandover?undefined:operations.find(o=>o.kind==='submit'&&o.slot===duty.shift_id);
  let savedHandover:{p_notes?:string;p_equipment?:string;p_incident_ids?:string[]}|null=null;
  if(operation){try{savedHandover=JSON.parse(operation.payload);}catch{savedHandover=null;}}
  const unsent=records.filter(r=>r.shift_id===duty.shift_id&&r.state!=='received');
@@ -37,7 +41,7 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
   return()=>{active=false;};
  },[online,duty.shift_id,duty.successor_shift_id]);
  async function confirm(){
-  if(lock.current||operation)return;
+  if(lock.current||operation||legacyHandover||savedLocally)return;
   if(notes.trim()&&notes.trim().length<5){setError('Handover notes must contain at least 5 characters.');return;}
   lock.current=true;setBusy(true);setError('');
   try{
@@ -46,9 +50,12 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
     p_id:Crypto.randomUUID(),p_shift_id:duty.shift_id,p_incoming_shift_id:duty.successor_shift_id??null,
     p_notes:notes.trim()||'No additional handover notes.',p_equipment:equipment.trim(),p_incident_ids:refs,p_ended_at:new Date().toISOString(),
    });
-   await onRefresh();
-   if(online){await syncRecords(actor);await onRefresh();}
-  }catch(e){setError(e instanceof Error?e.message:'Unable to save end duty. Please retry.');}
+   setSavedLocally(true);
+   if(online){try{await syncRecords(actor);}
+    catch{setError('End Duty was saved on this phone, but automatic sync did not complete. Open the sync queue to retry.');}}
+   try{await onRefresh();}
+   catch{setError('End Duty was saved on this phone, but its status could not be refreshed. Open the sync queue to review it.');}
+  }catch(e){setError(e instanceof Error?e.message:'End Duty could not be saved locally. Please retry.');}
   finally{lock.current=false;setBusy(false);}
  }
  const askConfirm=()=>Alert.alert('Confirm end duty',duty.successor_shift_id?
@@ -79,7 +86,7 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
     {operation?<Text accessibilityLiveRegion="polite" style={styles.body}>
      {operation.state==='received'?'End duty received by server':operation.state==='failed'?'End duty saved on phone · sync failed':'End duty saved on phone · waiting to sync'}
      {operation.error?'\n'+operation.error:''}
-    </Text>:<>
+    </Text>:legacyHandover?<Text style={styles.error}>This previous outgoing handover has no end-duty timestamp. Ask a supervisor to check the server shift status before proceeding.</Text>:<>
      <Text style={styles.label}>Notes</Text>
      <TextInput accessibilityLabel="Handover notes" multiline maxLength={3000} value={notes} onChangeText={setNotes}
       placeholder="Notes for the next guard" style={styles.input}/>
@@ -106,7 +113,9 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
      try{await syncRecords(actor);await onRefresh();}catch(e){setError(e instanceof Error?e.message:'Sync failed');}
      finally{lock.current=false;setBusy(false);}
     }}/>:null}
-   {!operation?<SmartButton label={busy?'Saving…':'Confirm End Duty'} disabled={busy} onPress={askConfirm}/>:null}
+   {savedLocally&&!operation?<Text accessibilityLiveRegion="polite" style={styles.body}>End Duty is saved locally. Server receipt is not yet confirmed.</Text>:null}
+   {(savedLocally||legacyHandover)?<SmartButton variant="secondary" label="Open sync queue" onPress={onQueue}/>:null}
+   {!operation&&!legacyHandover&&!savedLocally?<SmartButton label={busy?'Saving…':'Confirm End Duty'} disabled={busy} onPress={askConfirm}/>:null}
    <SmartButton variant="secondary" label={operation?'Back to Home':'Return to current shift'} onPress={onBack}/>
   </ScrollView>
  </View>;

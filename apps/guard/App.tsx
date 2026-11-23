@@ -6,6 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 import type {Session} from '@supabase/supabase-js';
 import {supabase} from './src/api';
 import {canChangeDutyPresence,type DutyPresence} from './src/duty-presence';
+import {getEndDutyStatus} from './src/end-duty-state';
 import {AuthEntry} from './src/auth/AuthEntry';
 import {cachedOfflineRole,roleForProfile,type AccountRole} from './src/auth/role';
 import {watchAuthLinks,type AuthFlow} from './src/auth/AuthLinks';
@@ -69,8 +70,9 @@ function InnerApp(){
  const selectedLocal=records.find(record=>record.id===selectedId)??null;
  const pending=records.filter(record=>record.state!=='received');
  const pendingOps=handoverOps.filter(o=>o.state!=='received');
- const pendingEnd=handoverOps.some(o=>o.kind==='submit'&&o.slot===duty?.shift_id&&o.state!=='received');
- const receivedEnd=handoverOps.some(o=>o.kind==='submit'&&o.slot===duty?.shift_id&&o.state==='received');
+ const endDutyStatus=getEndDutyStatus(handoverOps,duty?.shift_id);
+ const pendingEnd=endDutyStatus==='queued'||endDutyStatus==='sending'||endDutyStatus==='failed';
+ const receivedEnd=endDutyStatus==='received';
  const endDutyRecorded=pendingEnd||receivedEnd;
  const pendingPhotos=photos.filter(p=>p.state!=='uploaded');
  const failedCount=[...pending,...pendingOps,...pendingPhotos].filter(record=>record.state==='failed').length;
@@ -374,7 +376,8 @@ function InnerApp(){
    {page==='tabs'&&tab==='handover'&&<View style={styles.panel}>
     <AppHeader title="Handover" subtitle="Prepare for shift change" isOnline={isOnline} pendingCount={pending.length} onPressSyncBadge={openQueue}/>
     <ScrollView contentContainerStyle={styles.panelContent}>
-     <HandoverPanel key={uid} actor={uid!} duty={duty} online={isOnline} incidents={serverIncidents} onDelivered={()=>isOnline?refresh(uid!):refreshLocal(uid!)}/>
+     <HandoverPanel key={uid} actor={uid!} duty={duty} online={isOnline} endDutyStatus={endDutyStatus}
+      onRequestEndDuty={openOffDutyHandover} onDelivered={()=>isOnline?refresh(uid!):refreshLocal(uid!)}/>
     </ScrollView><BottomNavBar activeTab="handover" onSelectTab={selectTab} unsyncedCount={pending.length}/>
    </View>}
    {page==='incidentForm'&&<ReportIncidentScreen siteName={duty?.site_name??'No verified site'}
