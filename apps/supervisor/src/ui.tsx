@@ -4,7 +4,7 @@ export const navigation = [
   ['overview','Overview','Operations overview','A clear view of your security operations today.'],
   ['incidents','Incidents','Incident management','Review reports received from your permitted sites.'],
   ['occurrence','Occurrence Book','Digital occurrence book','Search and print records received from the field.'],
-  ['guards','Guards','Guards','See guard references from authorized shift records.'],
+  ['guards','Guards','Guards & personnel','Review site-scoped identities, duty state and operational history.'],
   ['shifts','Shifts','Shifts & coverage','See scheduled assignments and confirmed check-ins.'],
   ['handovers','Handovers','Shift handovers','Review submitted handovers and incoming guard acknowledgement.'],
   ['sites','Sites','Sites & assignments','View your permitted sites and their guard assignments.'],
@@ -56,7 +56,7 @@ export function Select(props:ComponentPropsWithoutRef<'select'>) {
 export function Badge({value}:{value:string}) {
   const tone = /critical|high|missed|needs review|coverage gap/i.test(value) ? 'red'
     : /pending|medium|scheduled|reported|in progress/i.test(value) ? 'amber'
-    : /on duty|confirmed|acknowledged|resolved|covered|received/i.test(value) ? 'green' : 'gray';
+    : /on duty|confirmed|acknowledged|resolved|covered|received|active account|active assignment/i.test(value) ? 'green' : 'gray';
   return <span className={'badge '+tone}>{label(value)}</span>;
 }
 export function Card({title,subtitle,action,children,className=''}:{title:string;subtitle?:string;action?:ReactNode;children:ReactNode;className?:string}) {

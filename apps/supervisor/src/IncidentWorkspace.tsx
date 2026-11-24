@@ -8,8 +8,8 @@ const pageSize=25;
 const tabs=[['','All'],['reported','Needs review'],['acknowledged','Acknowledged'],['in_progress','In progress'],['resolved','Resolved'],['closed','Closed']] as const;
 const severities=['low','medium','high','critical'];
 
-export function IncidentWorkspace({sites,siteId,onSiteChange,onDashboardRefresh}:{
-  sites:Site[];siteId:string;onSiteChange:(id:string)=>void;onDashboardRefresh:()=>void;
+export function IncidentWorkspace({sites,siteId,personnelNames,onSiteChange,onDashboardRefresh}:{
+  sites:Site[];siteId:string;personnelNames:Record<string,string>;onSiteChange:(id:string)=>void;onDashboardRefresh:()=>void;
 }) {
   const [search,setSearch]=useState('');
   const [debouncedSearch,setDebouncedSearch]=useState('');
@@ -93,7 +93,7 @@ export function IncidentWorkspace({sites,siteId,onSiteChange,onDashboardRefresh}
     </Card>
     {selected&&<div className="incident-detail-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setSelected(null);}}>
       <aside className="incident-detail-panel" role="dialog" aria-modal="true" aria-label={'Incident '+selected.public_number}>
-        <IncidentDetail incident={selected} siteName={siteName(selected.site_id)} onClose={()=>setSelected(null)} onRefresh={refresh}/>
+        <IncidentDetail incident={selected} siteName={siteName(selected.site_id)} reporterName={personnelNames[selected.reporter_id]} onClose={()=>setSelected(null)} onRefresh={refresh}/>
       </aside></div>}
   </div>;
 }

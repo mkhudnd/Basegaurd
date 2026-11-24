@@ -324,6 +324,22 @@ footer{color:var(--muted);font-size:11px;margin-top:32px}
  .filters{padding-left:18px;padding-right:18px}
  .filters input[type=search]{min-width:0;width:100%}
 }
+
+/* Sprint 3 personnel workspace */
+.card-actions{display:flex;gap:9px;align-items:center}.personnel-filters{display:grid;grid-template-columns:2fr repeat(4,minmax(145px,1fr));gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.personnel-filters label,.personnel-form label{display:grid;gap:6px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.02em}.personnel-filters .field,.personnel-filters select{width:100%}
+.personnel-table-wrap{border-radius:0;border-inline:0}.personnel-table{min-width:1040px}.person-cell{display:flex;align-items:center;gap:11px;min-width:190px}.person-cell>span:last-child{display:grid;gap:3px}.person-cell small{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:11px;font-weight:500;white-space:nowrap}
+.person-avatar{display:grid;place-items:center;flex:0 0 38px;height:38px;border:1px solid #b7d6c7;border-radius:50%;background:var(--mint);color:var(--forest);font-size:12px;font-weight:800}.person-avatar.large{flex-basis:52px;height:52px;font-size:15px}
+.capability-state{margin:18px 20px;padding:16px 18px;border:1px solid #d6e2dc;border-left:4px solid var(--forest);border-radius:10px;background:#f7faf8;color:var(--ink)}.capability-state p{margin:6px 0 0;color:var(--muted);line-height:1.55}.capability-state code{font-size:12px}
+.personnel-detail-panel{padding:0;overflow:auto}.personnel-detail-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid var(--line);background:#fff}.personnel-detail-head h2{margin:3px 0;font-size:21px}.profile-statuses{display:flex;flex-wrap:wrap;gap:8px;padding:15px 22px;border-bottom:1px solid var(--line)}
+.profile-tabs{display:flex;gap:2px;overflow:auto;padding:0 14px;border-bottom:1px solid var(--line);background:#fbfcfb}.profile-tabs button{min-height:48px;padding:0 12px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--muted);font:700 12px Inter,system-ui;white-space:nowrap;cursor:pointer}.profile-tabs button.active{border-color:var(--green);color:var(--forest)}.profile-tab-content{padding:20px 22px 28px}.profile-list{display:grid;gap:10px}.profile-list article{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px;border:1px solid var(--line);border-radius:12px}.profile-list article div{display:grid;gap:4px}.profile-list small{color:var(--muted)}
+.account-capabilities .capability-state{margin:0 0 18px}.personnel-form{display:grid;gap:15px;min-width:min(480px,75vw)}.personnel-form>p{margin:0;color:var(--muted);line-height:1.55}.personnel-form select{width:100%}
+
+@media(max-width:1200px){.personnel-filters{grid-template-columns:2fr repeat(2,minmax(150px,1fr))}}
+@media(max-width:700px){
+ .card-actions{width:100%;align-items:stretch;flex-direction:column}.card-actions .btn{width:100%}.personnel-filters{grid-template-columns:1fr;padding:15px}.personnel-filters label:first-child{grid-row:auto}.personnel-table{min-width:900px}
+ .personnel-detail-panel{width:100%}.personnel-detail-head{padding:16px}.profile-statuses{padding:13px 16px}.profile-tabs{padding-inline:8px}.profile-tab-content{padding:17px 16px 24px}.personnel-form{min-width:0;width:100%}
+}
 @media print{
  body,.main,.content{background:white;margin:0;padding:0;width:100%}
  .sidebar,.topbar,.header-actions,.filters,.notice,.text-btn,footer,dialog{display:none!important}

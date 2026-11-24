@@ -1,10 +1,11 @@
-import {useEffect,useMemo,useState,type FormEvent,type ReactNode} from 'react';
+import {useCallback,useEffect,useMemo,useState,type FormEvent,type ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {type Session} from '@supabase/supabase-js';
 
-import {authorizedWorkspace,errorMessage,loadRecords,supabase,type Feed,type Handover,type Incident,type Occurrence,type Profile,type Shift,type Site} from './service';
+import {authorizedWorkspace,errorMessage,isAuthError,isPersonnelCapabilityUnavailable,loadPersonnelIdentityMap,loadRecords,supabase,type Feed,type Handover,type Incident,type Occurrence,type Profile,type Shift,type Site} from './service';
 import {IncidentDetail,localDate,ref,time} from './incident-detail';
 import {IncidentWorkspace} from './IncidentWorkspace';
+import {PersonnelWorkspace} from './PersonnelWorkspace';
 import {Badge,Button,Card,Dialog,Icon,Input,Metrics,Select,Table,label,navigation,type Page} from './ui';
 import {OperationsMap} from './operations-map';
 import './style.css';
@@ -86,12 +87,14 @@ function Workspace({session}:{session:Session}){
   const [filter,setFilter]=useState('');
   const [date,setDate]=useState('');
   const [detail,setDetail]=useState<Detail|null>(null);
+  const [personnelNames,setPersonnelNames]=useState<Record<string,string>>({});
   const [signOutError,setSignOutError]=useState('');
   const [signingOut,setSigningOut]=useState(false);
   const [now,setNow]=useState(Date.now);
   const scope=JSON.stringify([userRefresh,siteId,version]);
   const data=records.scope===scope?records.data:loading;
   const refresh=()=>{setNow(Date.now());setVersion(v=>v+1);};
+  const mergePersonnelNames=useCallback((names:Record<string,string>)=>setPersonnelNames(previous=>({...previous,...names})),[]);
 
   useEffect(()=>{
     const request=new AbortController();
@@ -119,6 +122,18 @@ function Workspace({session}:{session:Session}){
     for(const kind of feedKeys)void load(kind);
     return ()=>request.abort();
   },[access,scope,siteId]);
+
+  useEffect(()=>{
+    if(!access?.sites.length){setPersonnelNames({});return;}
+    const request=new AbortController();setPersonnelNames({});
+    void loadPersonnelIdentityMap(siteId,access.sites,request.signal).then(names=>{
+      if(!request.signal.aborted)setPersonnelNames(names);
+    }).catch(reason=>{
+      if(request.signal.aborted||isPersonnelCapabilityUnavailable(reason))return;
+      if(isAuthError(reason))void supabase?.auth.signOut({scope:'local'});
+    });
+    return()=>request.abort();
+  },[access,siteId,version]);
 
   useEffect(()=>{
     if(!menu)return;
@@ -149,6 +164,7 @@ function Workspace({session}:{session:Session}){
   const sites=access?.sites??[];
   const selectedSites=sites.filter(s=>!siteId||s.id===siteId);
   const siteName=(id:string)=>sites.find(s=>s.id===id)?.name??'Site unavailable';
+  const guardName=(id:string|null)=>id?(personnelNames[id]??ref(id)):'Unassigned';
   const initials=access?.profile.display_name.trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase()??'';
   const shifts=ready(data.shifts),incidents=ready(data.incidents),handovers=ready(data.handovers);
   const coverageAvailable=shifts?.every(s=>'presence_status' in s);
@@ -182,9 +198,9 @@ function Workspace({session}:{session:Session}){
     ]}))}/>;
   }
   function shiftTable(rows:Shift[],filtered=true){
-    const visible=filtered?rows.filter(r=>matches([r.guard_id,r.post??'',siteName(r.site_id)],label(shiftStatus(r,now)),r.started_at)):rows;
+    const visible=filtered?rows.filter(r=>matches([r.guard_id,guardName(r.guard_id),r.post??'',siteName(r.site_id)],label(shiftStatus(r,now)),r.started_at)):rows;
     return <Table name="Shift assignments" heads={['Guard reference','Site / post','Scheduled start','Confirmed check-in','Status']} rows={visible.map(row=>({id:row.id,cells:[
-      <button className="text-btn" title={row.guard_id} onClick={()=>setDetail({kind:'shift',row})}>{ref(row.guard_id)}</button>,
+      <button className="text-btn" title={row.guard_id} onClick={()=>setDetail({kind:'shift',row})}>{guardName(row.guard_id)}</button>,
       <><strong>{siteName(row.site_id)}</strong><span className="sub">{row.post??'Post unavailable'}</span></>,time(row.started_at),
       row.checked_in_at?time(row.checked_in_at):'checked_in_at' in row?'Not recorded':'Unavailable',<Badge value={shiftStatus(row,now)}/>,
     ]}))}/>;
@@ -276,7 +292,7 @@ function Workspace({session}:{session:Session}){
             }))}/>:data.occurrences.state==='ready'&&data.handovers.state==='ready'&&data.shifts.state==='ready'&&<p className="empty">No operational activity recorded.</p>}
           </Card>
         </>}
-        {page==='incidents'&&<IncidentWorkspace sites={sites} siteId={siteId} onSiteChange={chooseSite} onDashboardRefresh={refresh}/>}
+        {page==='incidents'&&<IncidentWorkspace sites={sites} siteId={siteId} personnelNames={personnelNames} onSiteChange={chooseSite} onDashboardRefresh={refresh}/>}
         {page==='occurrence'&&<Card className="listing" title="Occurrence register" subtitle="Filter by event date in Africa/Harare">
           {filters([])}<Source resource={data.occurrences}>{rows=><Table name="Occurrence book" heads={['Event time','Category','Entry','Site','Server received','Action']}
             rows={rows.filter(r=>matches([r.category,r.narrative,siteName(r.site_id)],'',r.event_at)).map(row=>({id:row.id,cells:[
@@ -293,8 +309,8 @@ function Workspace({session}:{session:Session}){
         </Card></div>}
         {page==='handovers'&&<Card className="listing" title="Handover register" subtitle="Acknowledgement is based on the recorded server timestamp">
           {filters(['Pending','Acknowledged','No recipient assigned'])}<Source resource={data.handovers}>{rows=><Table name="Shift handovers" heads={['Site / post','Outgoing guard','Incoming guard','Submitted','Status','Action']}
-            rows={rows.filter(r=>matches([siteName(r.site_id),r.post??'',r.notes,r.outgoing_guard_id,r.incoming_guard_id??''],handoverStatus(r),r.submitted_at)).map(row=>({id:row.id,cells:[
-              <><strong>{siteName(row.site_id)}</strong><span className="sub">{row.post??'Post unavailable'}</span></>,ref(row.outgoing_guard_id),ref(row.incoming_guard_id),time(row.submitted_at),<Badge value={handoverStatus(row)}/>,
+            rows={rows.filter(r=>matches([siteName(r.site_id),r.post??'',r.notes,r.outgoing_guard_id,guardName(r.outgoing_guard_id),r.incoming_guard_id??'',guardName(r.incoming_guard_id)],handoverStatus(r),r.submitted_at)).map(row=>({id:row.id,cells:[
+              <><strong>{siteName(row.site_id)}</strong><span className="sub">{row.post??'Post unavailable'}</span></>,guardName(row.outgoing_guard_id),guardName(row.incoming_guard_id),time(row.submitted_at),<Badge value={handoverStatus(row)}/>,
               <button className="text-btn" onClick={()=>setDetail({kind:'handover',row})}>Open handover</button>,
             ]}))}/>}</Source>
         </Card>}
@@ -303,17 +319,7 @@ function Workspace({session}:{session:Session}){
         </Card><Card title="Site shift assignments" subtitle="Read-only roster for the selected sites">
           {filters([])}<Source resource={data.shifts}>{rows=>shiftTable(rows)}</Source>
         </Card></div>}
-        {page==='guards'&&<Card title="Guard references" subtitle="Distinct guards on shifts at your permitted sites. The guard directory is unavailable.">
-          {filters([],false)}
-          <Source resource={data.shifts}>{rows=>{
-            const guards=new Map<string,Shift>();
-            for(const row of rows)if(!guards.has(row.guard_id))guards.set(row.guard_id,row);
-            return <Table name="Guard references" heads={['Guard reference','Most recent scheduled site','Scheduled start','Action']} rows={[...guards.values()]
-              .filter(row=>matches([row.guard_id,siteName(row.site_id)],'',row.started_at))
-              .map(row=>({id:row.guard_id,cells:[<span title={row.guard_id}>{ref(row.guard_id)}</span>,siteName(row.site_id),time(row.started_at),
-                <button className="text-btn" onClick={()=>setDetail({kind:'shift',row})}>Open shift</button>]}))}/>;
-          }}</Source>
-        </Card>}
+        {page==='guards'&&<PersonnelWorkspace sites={sites} siteId={siteId} onSiteChange={chooseSite} onWorkspaceRefresh={refresh} onNames={mergePersonnelNames}/>}
         {page==='live'&&<div className="sections">
           <OperationsMap sites={mapSites} incidentSites={incidentSites} onSelectSite={chooseSite}/>
           <Card title="Live data availability"><p className="inline-note">The map uses authorized site records and urgent incidents from the latest refresh. Live guard locations, SOS alerts, geofences and patrol routes are awaiting implementation.</p></Card>
@@ -335,11 +341,11 @@ function Workspace({session}:{session:Session}){
     </div></main>
     {detail&&<Dialog title={detail.kind==='incident'?detail.row.public_number:detail.kind==='shift'?'Shift assignment':detail.kind==='handover'?'Shift handover':'Occurrence entry'} onClose={()=>setDetail(null)}>
       <p><strong>{siteName(detail.row.site_id)}</strong></p>
-      {detail.kind==='incident'&&<IncidentDetail key={detail.row.id} incident={detail.row} siteName={siteName(detail.row.site_id)} onRefresh={refresh}/>}
+      {detail.kind==='incident'&&<IncidentDetail key={detail.row.id} incident={detail.row} siteName={siteName(detail.row.site_id)} reporterName={personnelNames[detail.row.reporter_id]} onRefresh={refresh}/>}
       {detail.kind==='occurrence'&&<><Badge value={detail.row.category}/><p>Event {time(detail.row.event_at)} · Received {time(detail.row.received_at)}</p><p className="record-copy">{detail.row.narrative}</p></>}
       {detail.kind==='handover'&&<>
         <Badge value={handoverStatus(detail.row)}/><p>{detail.row.post??'Post unavailable'} · Submitted {time(detail.row.submitted_at)}</p>
-        <p>Outgoing guard {ref(detail.row.outgoing_guard_id)} · Incoming guard {ref(detail.row.incoming_guard_id)}</p>
+        <p>Outgoing guard {guardName(detail.row.outgoing_guard_id)} · Incoming guard {guardName(detail.row.incoming_guard_id)}</p>
         {detail.row.accepted_at&&<p>Acknowledged {time(detail.row.accepted_at)}</p>}<p className="record-copy">{detail.row.notes}</p>
         {detail.row.equipment&&<><h3>Equipment</h3><p className="record-copy">{detail.row.equipment}</p></>}
         {!!detail.row.incident_ids?.length&&<><h3>Linked incidents</h3><ul>{detail.row.incident_ids.map(id=>{
@@ -347,7 +353,7 @@ function Workspace({session}:{session:Session}){
           return <li key={id}>{row?<button className="text-btn" onClick={()=>setDetail({kind:'incident',row})}>{row.public_number}</button>:ref(id)}</li>;
         })}</ul></>}
       </>}
-      {detail.kind==='shift'&&<><Badge value={shiftStatus(detail.row,now)}/><p>Guard {ref(detail.row.guard_id)} · {detail.row.post??'Post unavailable'}</p><p>Scheduled start {time(detail.row.started_at)}</p>
+      {detail.kind==='shift'&&<><Badge value={shiftStatus(detail.row,now)}/><p>Guard {guardName(detail.row.guard_id)} · {detail.row.post??'Post unavailable'}</p><p>Scheduled start {time(detail.row.started_at)}</p>
         <p>{detail.row.checked_in_at?'Confirmed check-in '+time(detail.row.checked_in_at):'checked_in_at' in detail.row?'No confirmed check-in recorded.':'Check-in data unavailable.'}</p>
         {detail.row.ended_at&&<p>Shift end {time(detail.row.ended_at)}</p>}
       </>}

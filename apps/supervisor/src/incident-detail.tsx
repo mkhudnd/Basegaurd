@@ -10,8 +10,8 @@ export const localDate=(v:string|number)=>dateFormatter.format(new Date(v));
 export const time=(v:string)=>timeFormatter.format(new Date(v));
 export const ref=(id:string|null)=>id?('…'+id.slice(-8)):'Unavailable';
 
-export function IncidentDetail({incident,siteName,onRefresh,onClose}:{
-  incident:Incident;siteName:string;onRefresh:()=>void;onClose?:()=>void;
+export function IncidentDetail({incident,siteName,reporterName,onRefresh,onClose}:{
+  incident:Incident;siteName:string;reporterName?:string;onRefresh:()=>void;onClose?:()=>void;
 }) {
   const [status,setStatus]=useState(incident.status);
   const [history,setHistory]=useState<Update[]|null>(null);
@@ -67,7 +67,7 @@ export function IncidentDetail({incident,siteName,onRefresh,onClose}:{
     <div className="detail-badges"><Badge value={incident.severity}/><Badge value={displayIncidentStatus(status)}/></div>
     <dl className="incident-facts">
       <div><dt>Category</dt><dd>{label(incident.category)}</dd></div>
-      <div><dt>Reporting guard</dt><dd title={incident.reporter_id}>{ref(incident.reporter_id)}<small>Name unavailable under current profile policy</small></dd></div>
+      <div><dt>Reporting guard</dt><dd title={incident.reporter_id}>{reporterName??ref(incident.reporter_id)}{!reporterName&&<small>Name unavailable until the personnel identity proposal is deployed</small>}</dd></div>
       <div><dt>Site</dt><dd>{siteName}</dd></div>
       <div><dt>Post</dt><dd>{context===null?'Loading…':context.post||'Not recorded'}</dd></div>
       <div><dt>Reported</dt><dd>{time(incident.reported_at)}</dd></div>

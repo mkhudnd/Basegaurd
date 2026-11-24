@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {harareDayRange,safeSearchTerm,validateAcknowledgementReceipt,validateResponseReceipt,type IncidentSort} from './incident-domain';
+import {safePersonnelSearch,validatePersonnelPage,type PersonnelPage,type PersonnelRecord,type PersonnelSort} from './personnel-domain';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -152,8 +153,10 @@ export async function loadIncidentCounts(siteId:string,signal:AbortSignal):Promi
 }
 
 function missingCapability(error:unknown) {
-  return Boolean(error&&typeof error==='object'&&'code' in error&&['42P01','42703','PGRST205'].includes(String(error.code)));
+  return Boolean(error&&typeof error==='object'&&'code' in error&&['42P01','42703','42883','PGRST202','PGRST205'].includes(String(error.code)));
 }
+
+export const isPersonnelCapabilityUnavailable=missingCapability;
 
 export async function loadIncidentContext(incident:Incident,signal:AbortSignal):Promise<IncidentContext> {
   const db=client();
@@ -193,4 +196,62 @@ export async function recordResponse(id:string, updateId:string, action:'progres
   });
   if (error) throw error;
   validateResponseReceipt(updateId,data);
+}
+
+export type PersonnelQuery = {
+  page:number; pageSize:number; siteId:string; search:string;
+  accountStatus:string; dutyStatus:string; sort:PersonnelSort;
+};
+
+export async function loadPersonnelPage(filters:PersonnelQuery,allowedSites:Site[],signal:AbortSignal):Promise<PersonnelPage> {
+  const {data,error}=await client().rpc('list_site_personnel',{
+    p_site_id:filters.siteId||null,
+    p_search:safePersonnelSearch(filters.search)||null,
+    p_account_status:filters.accountStatus||null,
+    p_duty_status:filters.dutyStatus||null,
+    p_sort:filters.sort,
+    p_offset:Math.max(0,filters.page)*filters.pageSize,
+    p_limit:filters.pageSize,
+  }).abortSignal(signal);
+  if(error)throw error;
+  return validatePersonnelPage(data,new Set(allowedSites.map(site=>site.id)),filters.pageSize);
+}
+
+export async function loadPersonnelIdentityMap(siteId:string,allowedSites:Site[],signal:AbortSignal) {
+  const names:Record<string,string>={};
+  const pageSize=100;
+  for(let page=0;;page++){
+    const result=await loadPersonnelPage({page,pageSize,siteId,search:'',accountStatus:'',dutyStatus:'',sort:'name_asc'},allowedSites,signal);
+    for(const row of result.rows)names[row.id]=row.display_name;
+    if((page+1)*pageSize>=result.count||!result.rows.length)return names;
+  }
+}
+
+export type PersonnelHistory = {shifts:Shift[];incidents:Incident[];handovers:Handover[]};
+
+export async function loadPersonnelHistory(person:PersonnelRecord,allowedSites:Site[],signal:AbortSignal):Promise<PersonnelHistory> {
+  const permitted=new Set(allowedSites.map(site=>site.id));
+  const siteIds=person.site_ids.filter(id=>permitted.has(id));
+  if(!siteIds.length)return {shifts:[],incidents:[],handovers:[]};
+  const db=client();
+  const [shifts,incidents,handovers]=await Promise.all([
+    collect<Shift>(async(start,end)=>await db.from('shifts').select('*').eq('guard_id',person.id).in('site_id',siteIds)
+      .order('started_at',{ascending:false}).order('id').range(start,end).abortSignal(signal)),
+    collect<Incident>(async(start,end)=>await db.from('incidents').select(incidentColumns).eq('reporter_id',person.id).in('site_id',siteIds)
+      .order('reported_at',{ascending:false}).order('id').range(start,end).abortSignal(signal)),
+    collect<Handover>(async(start,end)=>await db.from('shift_handovers').select('*').in('site_id',siteIds)
+      .or(`outgoing_guard_id.eq.${person.id},incoming_guard_id.eq.${person.id}`).order('submitted_at',{ascending:false}).order('id').range(start,end).abortSignal(signal)),
+  ]);
+  return {shifts,incidents,handovers};
+}
+
+export async function inviteGuard(input:{email:string;displayName:string;siteId:string}) {
+  const db=client();
+  const {data,error}=await db.functions.invoke('invite-guard',{body:{
+    email:input.email.trim().toLowerCase(),display_name:input.displayName.trim(),site_id:input.siteId,
+  }});
+  if(error)throw error;
+  const receipt=data as {ok?:unknown;message?:unknown}|null;
+  if(receipt?.ok!==true||typeof receipt.message!=='string')throw new Error('Invalid guard invitation response.');
+  return receipt.message;
 }
