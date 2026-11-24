@@ -39,11 +39,11 @@ type LoadState = 'loading'|'ready'|'error';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 const ALL_SITES='all';
 const GREEN=COLORS.primary;
-const NAVY='#152836';
-const BG='#F6F8F9';
+const NAVY=COLORS.text;
+const BG=COLORS.background;
 const RED='#B43732';
-const MUTED='#60727c';
-const BORDER='#DEE7E8';
+const MUTED=COLORS.textMuted;
+const BORDER=COLORS.border;
 const clockTime = (iso:string) => {
   const d=new Date(iso);
   return Number.isFinite(d.getTime())
@@ -319,10 +319,11 @@ export function SupervisorWorkspace({userId,onSignOut}: {userId:string;onSignOut
         <Icon name="location-outline" size={17}/><Text numberOfLines={1} style={{flex:1,color:NAVY}}>{scopeTitle}</Text><Icon name="chevron-down" size={16}/>
       </Pressable>}
     />:<ScreenHeader
+      variant="light"
       title={({Incidents:'Incident Inbox',Guards:'Guards',Sites:'Sites',More:'More',Shifts:'Shifts & Rosters',OB:'Occurrence Book',Handovers:'Shift Handovers',Home:'Overview'} as Record<Page,string>)[page]}
       onBack={()=>navigate('Home')}
       rightAction={<Pressable accessibilityRole="button" accessibilityLabel="Choose assigned site" onPress={()=>setSitePickerOpen(true)} style={styles.screenSiteButton}>
-        <Icon name="location-outline" size={20} color="#FFFFFF"/>
+        <Icon name="location-outline" size={20} color={GREEN}/>
       </Pressable>}
     />}
 

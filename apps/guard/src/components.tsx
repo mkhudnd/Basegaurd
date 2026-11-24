@@ -19,26 +19,26 @@ import {
  * Preserves exact brand identity from DESIGN.md & UI_DESIGN_HANDOFF.md
  */
 export const COLORS = {
-  primary: '#075638',
-  teal: '#128C7A',
+  primary: '#174E42',
+  teal: '#16A34A',
   primaryHover: '#113F36',
-  primarySoft: '#E7F2EE',
-  navy: '#111827',
-  background: '#F7F8FA',
+  primarySoft: '#D4FAE8',
+  navy: '#17261D',
+  background: '#F7FAF8',
   surface: '#FFFFFF',
-  surfaceMuted: '#EEF2F4',
-  text: '#17252D',
-  textMuted: '#4B5563',
-  border: '#E2E5EA',
+  surfaceMuted: '#F0F7F1',
+  text: '#17261D',
+  textMuted: '#46584D',
+  border: '#D4DED7',
   danger: '#B43732',
   dangerSoft: '#FCEAE7',
   offline: '#73549B',
   offlineSoft: '#F0EAF8',
-  success: '#1B7C55',
+  success: '#166534',
   successSoft: '#E7F2EE',
   warning: '#9D620A',
   warningSoft: '#FFF3D6',
-  focus: '#246FA8',
+  focus: '#16A34A',
   white: '#FFFFFF',
 } as const;
 
@@ -147,6 +147,8 @@ export function formatTimestamp(iso?: string | null): string {
  * 1. Shared application headers
  * ========================================================================== */
 export interface HomeHeaderProps {
+  /** Optional operational page title; greeting stays compatible with existing callers. */
+  heading?: string;
   greeting: string;
   name: string;
   subtitle?: string;
@@ -157,23 +159,24 @@ export interface HomeHeaderProps {
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   greeting,
   name,
+  heading,
   subtitle,
   brandAction,
   contextAction,
 }) => (
   <View>
-    <View style={[styles.homeBrandRow,{backgroundColor:COLORS.primary,paddingHorizontal:APP_HORIZONTAL_PADDING,minHeight:APP_HEADER_HEIGHT}]}>
+    <View style={[styles.homeBrandRow,{backgroundColor:COLORS.white,paddingHorizontal:APP_HORIZONTAL_PADDING,minHeight:APP_HEADER_HEIGHT}]}>
       <View style={styles.homeBrandBlock}>
-        <View style={{width:34,height:34,borderRadius:8,alignItems:'center',justifyContent:'center',backgroundColor:'#275849'}}>
+        <View style={{width:34,height:34,borderRadius:8,alignItems:'center',justifyContent:'center'}}>
           <Image source={require('../assets/brand-shield.png')} resizeMode="contain" style={styles.screenHeaderLogo}/>
         </View>
-        <View style={{flex:1}}><Text style={styles.homeBrandText}>Baseguard SmartOps</Text><Text style={styles.homeSubtitle}>{subtitle}</Text></View>
+        <View style={{flex:1}}><Text style={styles.homeBrandText}>Baseguard</Text></View>
       </View>
       {brandAction}
     </View>
     <View style={{paddingHorizontal:16,paddingTop:10,paddingBottom:8,gap:4,backgroundColor:COLORS.background}}>
       <Text style={{color:'#48685B',fontSize:10,fontWeight:'700'}}>{new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}).toUpperCase()}</Text>
-      <Text style={{fontSize:21,fontWeight:'700',color:'#182F27'}}>{greeting}, {name}</Text>
+      <Text style={{fontSize:21,fontWeight:'700',color:'#182F27'}}>{heading ?? `${greeting}, ${name}`}</Text>
       {contextAction}
     </View>
   </View>
@@ -240,6 +243,7 @@ export interface ScreenHeaderProps {
   onBack?: () => void;
   rightAction?: React.ReactNode;
   backAccessibilityLabel?: string;
+  variant?: 'dark' | 'light';
 }
 
 export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
@@ -248,11 +252,9 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   onBack,
   rightAction,
   backAccessibilityLabel = 'Go back',
+  variant = 'dark',
 }) => (
-  <View style={styles.screenHeader}>
-    <View style={styles.screenHeaderMark}>
-      <Image source={require('../assets/brand-shield.png')} resizeMode="contain" style={styles.screenHeaderLogo}/>
-    </View>
+  <View style={[styles.screenHeader,variant==='light'&&{backgroundColor:COLORS.white}]}>
     {onBack ? (
       <Pressable
         accessibilityRole="button"
@@ -260,12 +262,12 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
         onPress={onBack}
         style={({pressed}) => [styles.screenHeaderBack, pressed && styles.pressedOpacity]}
       >
-        <Ionicons name="arrow-back" size={24} color={COLORS.white}/>
+        <Ionicons name="arrow-back" size={24} color={variant==='light'?COLORS.primary:COLORS.white}/>
       </Pressable>
     ) : null}
     <View style={styles.screenHeaderTitles}>
-      <Text numberOfLines={1} style={styles.screenHeaderTitle}>{title}</Text>
-      {subtitle ? <Text numberOfLines={1} style={styles.screenHeaderSubtitle}>{subtitle}</Text> : null}
+      <Text numberOfLines={1} style={[styles.screenHeaderTitle,variant==='light'&&{color:COLORS.text}]}>{title}</Text>
+      {subtitle ? <Text numberOfLines={1} style={[styles.screenHeaderSubtitle,variant==='light'&&{color:COLORS.textMuted}]}>{subtitle}</Text> : null}
     </View>
     {rightAction ? <View style={styles.screenHeaderAction}>{rightAction}</View> : null}
   </View>
@@ -699,7 +701,7 @@ export interface BottomNavBarProps {
 
 const GUARD_TABS: { key: GuardTabKey; label: string; icon: React.ComponentProps<typeof Ionicons>['name']; activeIcon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
   { key: 'today', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
-  { key: 'ob', label: 'OB Entry', icon: 'document-text-outline', activeIcon: 'document-text' },
+  { key: 'ob', label: 'OB', icon: 'document-text-outline', activeIcon: 'document-text' },
   { key: 'incidents', label: 'Incidents', icon: 'shield-outline', activeIcon: 'shield' },
   { key: 'handover', label: 'Handover', icon: 'swap-horizontal-outline', activeIcon: 'swap-horizontal' },
 ];
@@ -784,7 +786,7 @@ const styles = StyleSheet.create({
   homeLogo: {width: 32, height: 34},
   homeBrandText: {
     flexShrink: 1,
-    color: COLORS.white,
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
     fontWeight: '700',
     fontSize: 17,

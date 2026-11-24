@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -14,21 +15,22 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { EmergencyEscalationBanner, ScreenHeader, ScreenHeaderActionButton } from './components';
+import {localDateTime,parseLocalDateTime} from './incident-domain';
 
 /**
  * Exact Stitch Tailwind Config Tokens from report_incident/code.html
  */
 const STITCH = {
-  primary: '#075638',
+  primary: '#174E42',
   primaryHover: '#113F36',
   primarySoft: '#E7F2EE',
   navy: '#152836',
-  background: '#F6F8F9',
+  background: '#F7FAF8',
   surface: '#FFFFFF',
   surfaceMuted: '#EEF2F4',
   surfaceContainer: '#E1F0FB',
   surfaceDim: '#CDDCE7',
-  text: '#17252D',
+  text: '#17261D',
   textMuted: '#556771',
   border: '#D9E2E6',
   danger: '#B43732',
@@ -102,6 +104,18 @@ const STITCH_INCIDENT_TYPES: StitchIncidentTypeRow[] = [
     label: 'Suspicious Person / Vehicle',
     icon: 'directions-car',
   },
+  {
+    uiKey: 'violence',
+    schemaCategory: 'violence',
+    label: 'Violence',
+    icon: 'warning-amber',
+  },
+  {
+    uiKey: 'medical',
+    schemaCategory: 'medical',
+    label: 'Medical',
+    icon: 'medical-services',
+  },
 ];
 
 interface StitchImmediateActionRow {
@@ -163,12 +177,6 @@ export interface ReportIncidentScreenProps {
   onOpenSyncQueue?: () => void;
 }
 
-function formatCatClock(date: Date): string {
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mm = String(date.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm} CAT`;
-}
-
 function resolveEventIsoFromInput(
   rawInput: string,
   baseDate: Date
@@ -193,6 +201,10 @@ function resolveEventIsoFromInput(
   }
 
   // Case 2: Full ISO or "YYYY-MM-DD HH:mm"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(trimmed)) {
+    const iso = parseLocalDateTime(trimmed);
+    return iso ? {valid:true,iso,ms:Date.parse(iso)} : {valid:false};
+  }
   const normalized = trimmed.includes('T')
     ? trimmed
     : trimmed.replace(' ', 'T');
@@ -225,7 +237,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   onOpenSyncQueue,
 }) => {
   const resolvedSiteName =
-    siteName || shiftContext?.siteName || 'Training Site Alpha (Fictional)';
+    siteName || shiftContext?.siteName || 'Assigned site unavailable';
   const resolvedShiftStart = shiftStartedAt || shiftContext?.startedAt;
   const resolvedError = storageError || errorMessage;
 
@@ -235,14 +247,14 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   const [selectedUiKey, setSelectedUiKey] = useState<string>('breach');
   const [severity, setSeverity] = useState<IncidentSeverityValue>('high');
   const [eventTimeText, setEventTimeText] = useState<string>(() =>
-    formatCatClock(initialEventAt ? new Date(initialEventAt) : new Date())
+    localDateTime(initialEventAt ?? new Date().toISOString())
   );
   const [clockFlash, setClockFlash] = useState<boolean>(false);
 
   const [narrative, setNarrative] = useState<string>(initialNotes??'');
   const [checkedActions, setCheckedActions] = useState<Record<string, boolean>>({
-    padlock: true,
-    radio_partner: true,
+    padlock: false,
+    radio_partner: false,
     perimeter: false,
   });
   const [witnessField, setWitnessField] = useState<string>('');
@@ -250,6 +262,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   const [submitLock, setSubmitLock] = useState<boolean>(false);
   const [photoUri,setPhotoUri]=useState<string|null>(null);
   const [cameraBusy,setCameraBusy]=useState(false);
+  const [categoryOpen,setCategoryOpen]=useState(false);
 
   const takePhoto=async()=>{
     if(cameraBusy)return;
@@ -270,7 +283,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   const severityIndicatorMeta = useMemo(() => {
     if (severity === 'high' || severity === 'critical') {
       return {
-        label: 'High Escalation',
+        label: severity === 'critical' ? 'Critical Priority' : 'High Priority',
         bg: STITCH.dangerSoft,
         fg: STITCH.danger,
       };
@@ -296,7 +309,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
   };
 
   const handleConfirmDiscard = () => {
-    if (narrative.trim().length === 0 && witnessField.trim().length === 0) {
+    if (narrative.trim().length === 0 && witnessField.trim().length === 0 && !photoUri) {
       handleBackOrCancel();
       return;
     }
@@ -320,7 +333,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
 
   const handleRefreshClock = () => {
     const now = new Date();
-    setEventTimeText(formatCatClock(now));
+    setEventTimeText(localDateTime(now.toISOString()));
     if (fieldErrors.eventAt) {
       setFieldErrors((prev) => ({ ...prev, eventAt: '' }));
     }
@@ -437,47 +450,6 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. Operational Context Bar */}
-        <View style={styles.contextBarCard}>
-          <View style={styles.contextBarLeft}>
-            <View style={styles.domainIconWrap}>
-              <MaterialIcons
-                name="domain"
-                size={20}
-                color={STITCH.textMuted}
-              />
-            </View>
-            <View style={styles.flex1}>
-              <Text style={styles.contextOverline}>FACILITY CONTEXT</Text>
-              <Text numberOfLines={1} style={styles.contextSiteTitle}>
-                {resolvedSiteName}{post?' · '+post:''}
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={[
-              styles.contextRightPill,
-              isOnline ? styles.onlineSoftBg : styles.offlineSoftBg,
-            ]}
-          >
-            <View
-              style={[
-                styles.dot,
-                { backgroundColor: isOnline ? STITCH.success : STITCH.offline },
-              ]}
-            />
-            <Text
-              style={[
-                styles.contextRightPillText,
-                { color: isOnline ? STITCH.success : STITCH.offline },
-              ]}
-            >
-              {isOnline ? 'Online (Outbox Ready)' : 'Offline (Queued Locally)'}
-            </Text>
-          </View>
-        </View>
-
         {/* 2. Emergency reporting reminder; this form does not dispatch assistance. */}
         <EmergencyEscalationBanner />
 
@@ -503,49 +475,30 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
               <Text style={styles.requiredTag}>*Required</Text>
             </View>
 
-            <View style={styles.typeRadioGroup}>
-              {STITCH_INCIDENT_TYPES.map((item) => {
-                const checked = selectedUiKey === item.uiKey;
-                return (
-                  <Pressable
-                    key={item.uiKey}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked }}
-                    onPress={() => setSelectedUiKey(item.uiKey)}
-                    style={[
-                      styles.typeRadioRow,
-                      checked && styles.typeRadioRowChecked,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.radioOuterCircle,
-                        checked && styles.radioOuterCircleChecked,
-                      ]}
-                    >
-                      {checked ? (
-                        <View style={styles.radioInnerDot} />
-                      ) : null}
-                    </View>
-
-                    <Text
-                      style={[
-                        styles.typeRadioLabel,
-                        checked && styles.typeRadioLabelChecked,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-
-                    <MaterialIcons
-                      name={item.icon}
-                      size={20}
-                      color={checked ? STITCH.primary : STITCH.textMuted}
-                    />
-                  </Pressable>
-                );
-              })}
-            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Choose incident category"
+              onPress={()=>setCategoryOpen(true)} style={styles.categorySelector}>
+              <MaterialIcons name="warning-amber" size={20} color={STITCH.primary}/>
+              <Text style={styles.categorySelectorText}>
+                {STITCH_INCIDENT_TYPES.find(item=>item.uiKey===selectedUiKey)?.label}
+              </Text>
+              <MaterialIcons name="keyboard-arrow-down" size={24} color={STITCH.primary}/>
+            </Pressable>
+            <Modal visible={categoryOpen} transparent animationType="fade" onRequestClose={()=>setCategoryOpen(false)}>
+              <View style={styles.categoryOverlay}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Close categories"
+                  style={StyleSheet.absoluteFillObject} onPress={()=>setCategoryOpen(false)}/>
+                <View style={styles.categorySheet}>
+                  <Text style={styles.sectionLabelText}>Incident category</Text>
+                  {STITCH_INCIDENT_TYPES.map(item=><Pressable key={item.uiKey} accessibilityRole="radio"
+                    accessibilityState={{checked:selectedUiKey===item.uiKey}}
+                    onPress={()=>{setSelectedUiKey(item.uiKey);setCategoryOpen(false);}}
+                    style={styles.categoryOption}>
+                    <Text style={styles.categorySelectorText}>{item.label}</Text>
+                    {selectedUiKey===item.uiKey?<MaterialIcons name="check" size={20} color={STITCH.primary}/>:null}
+                  </Pressable>)}
+                </View>
+              </View>
+            </Modal>
             {fieldErrors.category ? (
               <Text style={styles.validationErrorText}>
                 {fieldErrors.category}
@@ -583,6 +536,11 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
             </View>
 
             <View style={styles.severityGrid3}>
+              <Pressable accessibilityRole="radio" accessibilityState={{checked:severity==='critical'}}
+                onPress={()=>setSeverity('critical')}
+                style={[styles.severityCell,{backgroundColor:severity==='critical'?STITCH.danger:STITCH.dangerSoft}]}>
+                <Text style={[styles.severityCellTitle,{color:severity==='critical'?STITCH.white:STITCH.danger}]}>Critical</Text>
+              </Pressable>
               {/* High */}
               <Pressable
                 accessibilityRole="radio"
@@ -703,7 +661,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
                 size={18}
                 color={STITCH.primary}
               />
-              <Text style={styles.sectionLabelText}>Time of Incident</Text>
+              <Text style={styles.sectionLabelText}>Date and time of incident</Text>
             </View>
             <View style={styles.autoRecordedPill}>
               <Text style={styles.autoRecordedPillText}>Auto-recorded</Text>
@@ -728,7 +686,7 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
                   }
                 }}
                 style={styles.timeInputField}
-                placeholder="13:10 CAT"
+                placeholder="YYYY-MM-DD HH:mm"
                 placeholderTextColor={STITCH.textMuted}
               />
               <MaterialIcons name="edit" size={20} color={STITCH.textMuted} />
@@ -755,9 +713,17 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
             </Text>
           ) : null}
 
-          <Text style={styles.captionNote}>
-            Device logged {eventTimeText}. Edit if entering retroactively
-            following containment.
+          <Text style={styles.captionNote}>Enter the local date and time of the incident.</Text>
+        </View>
+
+        <View style={styles.surfaceCard}>
+          <Text style={[styles.sectionLabelText,{marginBottom:8}]}>Assigned location</Text>
+          <View style={styles.contextBarCard}>
+            <MaterialIcons name="place" size={20} color={STITCH.primary}/>
+            <Text style={[styles.contextSiteTitle,{flex:1}]}>{resolvedSiteName}{post?' · '+post:''}</Text>
+          </View>
+          <Text style={[styles.captionNote,{marginTop:6}]}>
+            {isOnline?'Online · reports are received only after server confirmation':'Offline · reports are saved locally until synced'}
           </Text>
         </View>
 
@@ -983,6 +949,11 @@ export const ReportIncidentScreen: React.FC<ReportIncidentScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  categorySelector:{minHeight:48,borderWidth:1,borderColor:'#D4DED7',borderRadius:10,backgroundColor:'#FFFFFF',flexDirection:'row',alignItems:'center',paddingHorizontal:12,gap:10},
+  categorySelectorText:{flex:1,fontSize:15,color:STITCH.text,fontFamily:FONTS.regular},
+  categoryOverlay:{flex:1,justifyContent:'flex-end',backgroundColor:'#0008'},
+  categorySheet:{backgroundColor:'#FFFFFF',borderTopLeftRadius:16,borderTopRightRadius:16,padding:16,paddingBottom:32,gap:4},
+  categoryOption:{minHeight:48,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:8},
   screen: {
     flex: 1,
     backgroundColor: STITCH.background,
@@ -1028,12 +999,13 @@ const styles = StyleSheet.create({
   contextBarCard: {
     backgroundColor: STITCH.surface,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D4DED7',
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    elevation: 1,
   },
   contextBarLeft: {
     flexDirection: 'row',
@@ -1151,10 +1123,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semibold,
   },
   surfaceCard: {
-    backgroundColor: STITCH.surface,
-    borderRadius: 12,
-    padding: 18,
-    elevation: 1,
+    backgroundColor: 'transparent',
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -1246,10 +1215,13 @@ const styles = StyleSheet.create({
   },
   severityGrid3: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
   },
   severityCell: {
     flex: 1,
+    flexBasis: '22%',
+    minWidth: 68,
     minHeight: 54,
     borderRadius: 8,
     paddingVertical: 6,
@@ -1452,11 +1424,8 @@ const styles = StyleSheet.create({
     color: STITCH.offline,
   },
   bottomActionsCard: {
-    backgroundColor: STITCH.surface,
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: 'transparent',
     gap: 6,
-    elevation: 3,
   },
   savePrimaryBtn: {
     minHeight: 52,

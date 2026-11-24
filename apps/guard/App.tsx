@@ -329,9 +329,10 @@ function InnerApp(){
 
  if(authLoading||connection===null||(session && roleState==='loading' && !authFlow))
   return <View style={styles.loading}><ActivityIndicator color={COLORS.primary}/></View>;
+ const lightStatusBar=!!session && (accountRole==='supervisor'||accountRole==='admin'||(accountRole==='guard'&&page==='tabs'&&tab==='today'));
  return <View style={[styles.root,{paddingTop:insets.top,paddingBottom:insets.bottom}]}>
-  <StatusBar barStyle="light-content" backgroundColor={COLORS.primary}/>
-  <View pointerEvents="none" style={[styles.topSafe,{height:insets.top}]}/>
+  <StatusBar barStyle={lightStatusBar?'dark-content':'light-content'} backgroundColor={lightStatusBar?COLORS.white:COLORS.primary}/>
+  <View pointerEvents="none" style={[styles.topSafe,{height:insets.top,backgroundColor:lightStatusBar?COLORS.white:COLORS.primary}]}/>
   {authFlow && session ? <SetPasswordScreen flow={authFlow} onComplete={()=>{setAuthFlow(null);setAuthLinkError('');}}/>:
    !session ? <AuthEntry errorFromLink={authLinkError}/>:
    roleState==='error' ? <View style={styles.accessDenied}>

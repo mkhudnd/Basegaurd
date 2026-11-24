@@ -1,6 +1,6 @@
 import React, {useEffect,useState} from 'react';
 import {supabase} from '../api';
-import {HomeActions, HomeQuickAction, StatCard, homeStyles} from '../HomeQuickAction';
+import {DutySummaryPanel,OperationalTaskRow} from '../OperationalMaterial';
 import {
   ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet,
   Text, View,
@@ -163,6 +163,7 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
     <HomeHeader
       greeting={new Date().getHours()<12?'Good morning':new Date().getHours()<18?'Good afternoon':'Good evening'}
       name={firstName}
+      heading="Current duty"
       subtitle={shiftContext?.siteName??nextShift?.site??'Guard workspace'}
       brandAction={<HomeHeaderControl kind="icon" accessibilityLabel="View shift details"
         onPress={()=>{setSheetMode('details');setMenuOpen(true);}}>
@@ -177,21 +178,24 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
       {endDutyPending?<InfoAlertBanner tone="offline" title="End duty waiting for server" body="The end-duty request is saved on this phone. Open End duty to review or retry."/>:null}
       {endDutyReceived?<InfoAlertBanner tone="success" title="End duty received" body="The server has recorded the end of this shift. Refresh to load your current assignment."/>:null}
 
-      <View style={{padding:12,gap:5,backgroundColor:'#E8F1EB',borderColor:'#C5DCCD',borderWidth:1,borderRadius:13,marginBottom:9}}>
-        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Open duty controls" onPress={()=>{setSheetMode('status');setMenuOpen(true);}} style={{minHeight:48,justifyContent:'center'}}>
-            <Text style={{color:COLORS.primary,fontWeight:'700'}}>● {shiftContext?(isCachedDuty?'Cached duty':statusLabel):'Off duty'}</Text>
-          </Pressable>
-          <Text style={styles.label}>{shiftContext?'Started '+timeOnly(shiftContext.startedAt):'Assignment'}</Text>
-        </View>
-        <Text style={styles.siteName}>{shiftContext?.siteName??nextShift?.site??(isLoadingShift?'Checking assignment…':'No active assignment')}</Text>
-        <Text style={styles.label}>{nextShift?'Scheduled '+formatTimestamp(nextShift.start):shiftContext?.endedAt?'Ends '+timeOnly(shiftContext.endedAt):shiftContext?'Active shift':'Awaiting duty activation'}</Text>
-        {(shiftContext?.post??nextShift?.post)?<Text style={styles.label}>Post · {shiftContext?.post??nextShift?.post}</Text>:null}
-        <Pressable disabled={!shiftContext&&(!nextShift||!isOnline||Date.parse(nextShift.start)>Date.now())} accessibilityRole="button"
-          onPress={async()=>{if(shiftContext){onRequestOffDuty();return;}if(nextShift){const {error}=await supabase.rpc('start_guard_duty',{p_shift_id:nextShift.id});if(error)Alert.alert('Duty start failed',error.message);else onRefreshShift?.();}}} style={{marginTop:4,minHeight:48,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:shiftContext?'white':'#537668'}}>
-          <Text style={{fontWeight:'700',color:shiftContext?COLORS.primary:'white'}}>{shiftContext?(endDutyPending||endDutyReceived?'Review end duty':'End duty'):'Start duty'}</Text>
-        </Pressable>
-      </View>
+      <DutySummaryPanel
+        post={shiftContext?.post??nextShift?.post??'Post not recorded'}
+        site={shiftContext?.siteName??nextShift?.site??(isLoadingShift?'Checking assignment…':'No active assignment')}
+        status={shiftContext?(isCachedDuty?'Cached duty':statusLabel):'Off duty'}
+        start={shiftContext?timeOnly(shiftContext.startedAt):nextShift?timeOnly(nextShift.start):'—'}
+        scheduledEnd={shiftContext?.endedAt?timeOnly(shiftContext.endedAt):'Not recorded'}
+        actionLabel={shiftContext?(endDutyPending||endDutyReceived?'Review End Duty':'View shift / End Duty'):'Start duty'}
+        actionDisabled={!shiftContext&&(!nextShift||!isOnline||Date.parse(nextShift.start)>Date.now())}
+        notice={successorAssigned?'Relief is assigned. Incoming guard acceptance is verified separately.':undefined}
+        onAction={async()=>{
+          if(shiftContext){onRequestOffDuty();return;}
+          if(nextShift){
+            const {error}=await supabase.rpc('start_guard_duty',{p_shift_id:nextShift.id});
+            if(error)Alert.alert('Duty start failed',error.message);
+            else onRefreshShift?.();
+          }
+        }}
+      />
 
       {onBreak?<View style={styles.breakNotice} accessibilityRole="text">
         <View style={styles.breakNoticeIcon}><Symbol name="cafe-outline" size={21} color={COLORS.warning}/></View>
@@ -219,28 +223,21 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
         <Symbol name="chevron-forward-outline" color={COLORS.navy} size={20}/>
       </Pressable>
 
-      <Pressable accessibilityRole="button" onPress={()=>onSelectTab('ob')} style={styles.syncStrip}><View><Text style={styles.syncTitle}>Today’s log</Text><Text>{todayCount} occurrence entries · Open log</Text></View></Pressable>
-      <Text style={[homeStyles.heading, {marginBottom: 6}]}>Quick actions</Text>
-      <HomeActions>
-        <HomeQuickAction title="Report incident" subtitle={shiftContext?'Record an incident':'Start duty to report'} icon="warning-outline"
-          color={COLORS.teal} disabled={!shiftContext||endDutyPending||endDutyReceived} onPress={onReportIncident}/>
-        <HomeQuickAction title="Emergency help" subtitle="Call or radio procedures" icon="medkit-outline" color={COLORS.danger} onPress={onSafetyProcedures}/>
-        <HomeQuickAction title="New OB entry" subtitle={shiftContext?'Log a site occurrence':'Start duty to log'} icon="book-outline"
-          color={COLORS.primary} disabled={!shiftContext||endDutyPending||endDutyReceived} onPress={onNewOccurrence}/>
-        <HomeQuickAction title="Shift handover" subtitle="Review or submit" icon="swap-horizontal-outline" onPress={onOpenHandover}/>
-        <HomeQuickAction title="My site" subtitle={shiftContext?.siteName??nextShift?.site??'No assignment'} icon="business-outline"
-          onPress={()=>Alert.alert(shiftContext?.siteName??nextShift?.site??'No assignment',shiftContext?.post??nextShift?.post??'Post unavailable')}/>
-        <HomeQuickAction title="Shift details" subtitle="Assignment and hours" icon="time-outline" onPress={()=>{setSheetMode('details');setMenuOpen(true);}}/>
-      </HomeActions>
-      <Text style={[homeStyles.heading,{marginVertical:12}]}>Operational overview</Text>
-      <HomeActions>
-        <StatCard label="Open reports in history" value={openIncidentCount??'—'}/>
-        <StatCard label="Awaiting sync" value={totalUnsent}/>
-      </HomeActions>
-      {successorAssigned&&<Text style={[styles.syncSub,{marginTop:8}]}>Incoming guard assigned for handover</Text>}
+      <View style={{marginTop:16,marginBottom:8}}>
+        <Text style={{fontFamily:FONTS.bold,fontSize:18,fontWeight:'700',color:COLORS.text}}>Actions</Text>
+        <Text style={{fontFamily:FONTS.regular,fontSize:12,color:COLORS.textMuted,marginTop:3}}>Today’s log · {todayCount} entries · Open reports in history {openIncidentCount??'—'}</Text>
+      </View>
+      <OperationalTaskRow title="New OB entry" description={shiftContext?'Log an occurrence or observation':'Start duty to log'}
+        icon="document-text-outline" disabled={!shiftContext||endDutyPending||endDutyReceived} onPress={onNewOccurrence}/>
+      <OperationalTaskRow title="Report incident" description={shiftContext?'Document a security concern':'Start duty to report'}
+        icon="alert-circle-outline" disabled={!shiftContext||endDutyPending||endDutyReceived} onPress={onReportIncident}/>
+      <OperationalTaskRow title="Shift handover" description="Review outgoing and incoming shift records"
+        icon="swap-horizontal-outline" onPress={onOpenHandover}/>
+      <OperationalTaskRow title="Emergency procedures" description="Use approved control room telephone or radio"
+        icon="call-outline" danger onPress={onSafetyProcedures}/>
 
       <View style={[styles.sectionHeader, {marginTop: 16}]}>
-        <Text style={[homeStyles.heading, {marginBottom: 8}]}>Recent Activity</Text>
+        <Text style={{fontFamily:FONTS.bold,fontWeight:'700',fontSize:18,color:COLORS.text,marginBottom:8}}>Recent activity</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Open occurrence book" onPress={()=>onSelectTab('ob')}>
           <Text style={styles.seeAll}>Occurrence Book <Symbol name="chevron-forward" size={14} color={COLORS.textMuted}/></Text>
         </Pressable>
@@ -254,10 +251,13 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
       </View>
 
     </ScrollView>
-    <View style={{marginHorizontal:16,marginVertical:8,padding:7,minHeight:48,justifyContent:'center',backgroundColor:'#FFF1F0',borderWidth:1,borderColor:'#F1C1C3',borderRadius:9}}>
-      <Text style={{textAlign:'center',color:COLORS.danger,fontWeight:'700'}}>Call control room</Text>
-      <Text style={{textAlign:'center',fontSize:10,color:COLORS.textMuted}}>Number unavailable · Use approved radio procedures</Text>
-    </View>
+    <Pressable accessibilityRole="button" accessibilityLabel="Open emergency procedures"
+      onPress={onSafetyProcedures}
+      style={{marginHorizontal:16,marginVertical:8,minHeight:48,justifyContent:'center',backgroundColor:'#FFF5F3',borderWidth:1,borderColor:'#EFCBC5',borderRadius:12,padding:10}}>
+      <Text style={{textAlign:'center',color:COLORS.danger,fontWeight:'700',fontSize:14}}>Emergency procedures</Text>
+      <Text style={{textAlign:'center',color:COLORS.textMuted,fontSize:12,marginTop:3}}>Use approved telephone or radio channels</Text>
+    </Pressable>
+
     <BottomNavBar activeTab={activeTab} onSelectTab={onSelectTab} unsyncedCount={totalUnsent}/>
 
     <Modal visible={menuOpen} transparent animationType="slide" onRequestClose={()=>setMenuOpen(false)} statusBarTranslucent>
