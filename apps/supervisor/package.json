@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/incident-domain.test.mjs src/incident-security.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.75.0",
@@ -18,6 +19,7 @@
     "@types/react": "~19.1.0",
     "@types/react-dom": "~19.1.0",
     "@vitejs/plugin-react": "~5.0.0",
+    "tsx": "4.23.15",
     "typescript": "~5.9.2",
     "vite": "~7.1.0"
   }

@@ -4,6 +4,7 @@ import {type Session} from '@supabase/supabase-js';
 
 import {authorizedWorkspace,errorMessage,loadRecords,supabase,type Feed,type Handover,type Incident,type Occurrence,type Profile,type Shift,type Site} from './service';
 import {IncidentDetail,localDate,ref,time} from './incident-detail';
+import {IncidentWorkspace} from './IncidentWorkspace';
 import {Badge,Button,Card,Dialog,Icon,Input,Metrics,Select,Table,label,navigation,type Page} from './ui';
 import {OperationsMap} from './operations-map';
 import './style.css';
@@ -275,9 +276,7 @@ function Workspace({session}:{session:Session}){
             }))}/>:data.occurrences.state==='ready'&&data.handovers.state==='ready'&&data.shifts.state==='ready'&&<p className="empty">No operational activity recorded.</p>}
           </Card>
         </>}
-        {page==='incidents'&&<Card className="listing" title="Incident register" subtitle="Filter by report date in Africa/Harare">
-          {filters(['Needs review','Acknowledged','In progress','Resolved','Closed'])}<Source resource={data.incidents}>{rows=>incidentTable(rows,true)}</Source>
-        </Card>}
+        {page==='incidents'&&<IncidentWorkspace sites={sites} siteId={siteId} onSiteChange={chooseSite} onDashboardRefresh={refresh}/>}
         {page==='occurrence'&&<Card className="listing" title="Occurrence register" subtitle="Filter by event date in Africa/Harare">
           {filters([])}<Source resource={data.occurrences}>{rows=><Table name="Occurrence book" heads={['Event time','Category','Entry','Site','Server received','Action']}
             rows={rows.filter(r=>matches([r.category,r.narrative,siteName(r.site_id)],'',r.event_at)).map(row=>({id:row.id,cells:[
@@ -336,7 +335,7 @@ function Workspace({session}:{session:Session}){
     </div></main>
     {detail&&<Dialog title={detail.kind==='incident'?detail.row.public_number:detail.kind==='shift'?'Shift assignment':detail.kind==='handover'?'Shift handover':'Occurrence entry'} onClose={()=>setDetail(null)}>
       <p><strong>{siteName(detail.row.site_id)}</strong></p>
-      {detail.kind==='incident'&&<IncidentDetail key={detail.row.id} incident={detail.row} onRefresh={refresh}/>}
+      {detail.kind==='incident'&&<IncidentDetail key={detail.row.id} incident={detail.row} siteName={siteName(detail.row.site_id)} onRefresh={refresh}/>}
       {detail.kind==='occurrence'&&<><Badge value={detail.row.category}/><p>Event {time(detail.row.event_at)} · Received {time(detail.row.received_at)}</p><p className="record-copy">{detail.row.narrative}</p></>}
       {detail.kind==='handover'&&<>
         <Badge value={handoverStatus(detail.row)}/><p>{detail.row.post??'Post unavailable'} · Submitted {time(detail.row.submitted_at)}</p>
