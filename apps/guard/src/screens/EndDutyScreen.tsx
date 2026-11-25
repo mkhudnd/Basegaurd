@@ -7,23 +7,27 @@ import {enqueueHandover} from '../handover-outbox';
 import {getEndDutyStatus} from '../end-duty-state';
 import {db,syncRecords,type Duty,type LocalRecord} from '../offline';
 import {supabase} from '../api';
+import {parseLocalDateTime} from '../incident-domain';
 
 type Operation={id:string;slot:string;kind:'submit'|'receive';state:string;error:string|null;payload:string};
 type Incident={id:string;site_id:string;public_number:string;status:string};
-type SavedHandover={p_notes?:string;p_equipment?:string;p_incident_ids?:string[]};
+type SavedHandover={p_notes?:string;p_equipment?:string;p_incident_ids?:string[];p_ended_at?:string};
 
 /**
  * UI redesign of the existing End Duty flow. This does not replace the actual
  * encrypted outbox or the server confirmation flow. "Received" means server
  * receipt, never incoming guard acceptance.
  */
-export function EndDutyScreen({actor,duty,guardName,online,records,operations,incidents,onRefresh,onBack,onQueue}:{
+export function EndDutyScreen({actor,duty,guardName,online,overdue,canSubmit,records,operations,incidents,onRefresh,onBack,onQueue}:{
  actor:string;duty:Duty;guardName:string|null;online:boolean;records:LocalRecord[];operations:Operation[];
+ overdue:boolean;canSubmit:boolean;
  incidents:Incident[];onRefresh:()=>Promise<void>;onBack:()=>void;onQueue:()=>void;
 }){
  const [notes,setNotes]=useState('');
  const [equipment,setEquipment]=useState('');
  const [refs,setRefs]=useState<string[]>([]);
+ const [checkoutMode,setCheckoutMode]=useState<'earlier'|'now'|null>(null);
+ const [checkoutText,setCheckoutText]=useState('');
  const [reviewing,setReviewing]=useState(false);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
@@ -31,6 +35,8 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
  const [now,setNow]=useState(Date.now());
  const [incoming,setIncoming]=useState<string|null>(null);
  const lock=useRef(false);
+ const latest=useRef({canSubmit,overdue});
+ latest.current={canSubmit,overdue};
  const endDutyStatus=getEndDutyStatus(operations,duty.shift_id);
  const legacyHandover=endDutyStatus==='legacy-handover';
  const operation=legacyHandover?undefined:operations.find(o=>o.kind==='submit'&&o.slot===duty.shift_id);
@@ -54,15 +60,17 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
  },[online,duty.shift_id,duty.successor_shift_id]);
 
  async function confirm(){
-  if(lock.current||operation||legacyHandover||savedLocally)return;
+  if(lock.current||operation||legacyHandover||savedLocally||!latest.current.canSubmit)return;
   if(notes.trim()&&notes.trim().length<5){setError('Handover notes must contain at least 5 characters.');return;}
+  const checkout=checkoutTime();
+  if(!checkout)return;
   lock.current=true;setBusy(true);setError('');
   try{
    const d=await db();
    await enqueueHandover(d,actor,'submit',duty.shift_id,{
     p_id:Crypto.randomUUID(),p_shift_id:duty.shift_id,p_incoming_shift_id:duty.successor_shift_id??null,
     p_notes:notes.trim()||'No additional handover notes.',p_equipment:equipment.trim(),
-    p_incident_ids:refs,p_ended_at:new Date().toISOString(),
+    p_incident_ids:refs,p_ended_at:checkout,
    });
    setSavedLocally(true);
    if(online){try{await syncRecords(actor);}
@@ -71,6 +79,14 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
    catch{setError('End Duty was saved on this phone, but its status could not be refreshed. Open the sync queue to review it.');}
   }catch(e){setError(e instanceof Error?e.message:'End Duty could not be saved locally. Please retry.');}
   finally{lock.current=false;setBusy(false);}
+ }
+
+ function checkoutTime(){
+  if(!latest.current.overdue||checkoutMode==='now')return new Date().toISOString();
+  const entered=checkoutMode==='earlier'?parseLocalDateTime(checkoutText):null;
+  if(entered && Date.parse(entered)>Date.parse(duty.started_at) && Date.parse(entered)<=Date.now())return entered;
+  setError('Choose ending now, or enter your actual checkout after shift start in YYYY-MM-DD HH:mm format. Ask a supervisor if you cannot confirm it.');
+  return null;
  }
 
  const askConfirm=()=>Alert.alert('Confirm End Duty',duty.successor_shift_id?
@@ -92,7 +108,9 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
    <View style={styles.dutyPanel}>
     <Text style={styles.heading}>{duty.post||'Assigned post'}</Text>
     <Text style={styles.body}>{duty.site_name} · {guardName||'Guard'}</Text>
-    <View style={styles.infoRow}><Text style={styles.caption}>Started · {formatTimestamp(duty.started_at)}</Text><Text style={styles.caption}>Duration · {Math.floor(elapsed/60)}h {elapsed%60}m</Text></View>
+    <View style={[styles.infoRow,overdue&&styles.overdueTimes]}><Text style={styles.caption}>Shift start · {formatTimestamp(duty.started_at)}</Text>
+     <Text style={styles.caption}>{overdue?`Reporting window ended · ${formatTimestamp(duty.ended_at)}`:`Duration · ${Math.floor(elapsed/60)}h ${elapsed%60}m`}</Text></View>
+    {overdue?<Text style={styles.body}>Overdue duty. Confirm your actual checkout. If you cannot confirm it, contact your supervisor.</Text>:null}
    </View>
 
    <SurfaceCard style={styles.flatCard}>
@@ -121,7 +139,9 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
       <Text style={styles.body}>Server receipt is not yet confirmed. Check the sync queue.</Text>
     </View>:null}
 
-    {!operation&&!legacyHandover&&!savedLocally?(reviewing?<>
+    {!operation&&!legacyHandover&&!savedLocally&&canSubmit?(reviewing?<>
+      {overdue?<><Text style={styles.label}>Guard-confirmed checkout</Text>
+        <Text style={styles.body}>{checkoutMode==='now'?'I am ending duty now':checkoutText}</Text></>:null}
       <Text style={styles.label}>Handover notes</Text>
       <Text style={styles.body}>{notes.trim()||'No additional handover notes.'}</Text>
       <Text style={styles.label}>Equipment</Text>
@@ -130,6 +150,12 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
       <Text style={styles.body}>{refs.length?refs.join(', '):'None selected'}</Text>
       <SmartButton variant="secondary" label="Edit handover" onPress={()=>setReviewing(false)}/>
     </>:<>
+      {overdue?<><Text style={styles.label}>When did you end duty?</Text>
+        <SmartButton variant="secondary" label={checkoutMode==='now'?'✓ I am ending duty now':'I am ending duty now'} onPress={()=>setCheckoutMode('now')}/>
+        <SmartButton variant="secondary" label={checkoutMode==='earlier'?'✓ I ended duty earlier':'I ended duty earlier'} onPress={()=>setCheckoutMode('earlier')}/>
+        {checkoutMode==='earlier'?<TextInput accessibilityLabel="Actual checkout in device local time"
+          value={checkoutText} onChangeText={setCheckoutText} placeholder="YYYY-MM-DD HH:mm" placeholderTextColor={COLORS.textMuted}
+          maxLength={16} style={styles.checkoutInput}/>:null}</>:null}
       <Text style={styles.label}>Handover notes</Text>
       <TextInput accessibilityLabel="Handover notes" multiline maxLength={3000} value={notes}
        onChangeText={setNotes} placeholder="What does the next guard need to know?" placeholderTextColor={COLORS.textMuted}
@@ -146,6 +172,7 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
     </>):null}
     {savedHandover?<View style={styles.savedDetails}>
       <Text style={styles.label}>Recorded handover</Text>
+      {savedHandover.p_ended_at?<Text style={styles.body}>Checkout · {formatTimestamp(savedHandover.p_ended_at)}</Text>:null}
       <Text style={styles.body}>Notes · {savedHandover.p_notes||'None recorded'}</Text>
       <Text style={styles.body}>Equipment · {savedHandover.p_equipment||'None recorded'}</Text>
       <Text style={styles.body}>Incident references · {savedHandover.p_incident_ids?.join(', ')||'None'}</Text>
@@ -160,11 +187,12 @@ export function EndDutyScreen({actor,duty,guardName,online,records,operations,in
       finally{lock.current=false;setBusy(false);}
      }}/>:null}
    {(savedLocally||legacyHandover)?<SmartButton variant="secondary" label="Open sync queue" onPress={onQueue}/>:null}
-   {!operation&&!legacyHandover&&!savedLocally?<SmartButton label={busy?'Saving…':reviewing?'Confirm End Duty':'Review End Duty'} disabled={busy}
+   {!canSubmit&&!operation&&!legacyHandover&&!savedLocally?<Text style={styles.caption}>End Duty is unavailable for this assignment. Check the sync queue or ask your supervisor.</Text>:null}
+   {!operation&&!legacyHandover&&!savedLocally&&canSubmit?<SmartButton label={busy?'Saving…':reviewing?'Confirm End Duty':'Review End Duty'} disabled={busy}
     onPress={()=>{
-     if(!reviewing){if(notes.trim()&&notes.trim().length<5){setError('Handover notes must contain at least 5 characters.');return;}setError('');setReviewing(true);}else askConfirm();
+     if(!reviewing){if(notes.trim()&&notes.trim().length<5){setError('Handover notes must contain at least 5 characters.');return;}if(!checkoutTime())return;setError('');setReviewing(true);}else if(checkoutTime())askConfirm();
     }}/>:null}
-   <SmartButton variant="secondary" label="Return to current shift" onPress={onBack}/>
+   <SmartButton variant="secondary" label={overdue||!canSubmit?'Return to Today':'Return to current shift'} onPress={onBack}/>
   </ScrollView>
  </View>;
 }
@@ -179,9 +207,12 @@ const styles=StyleSheet.create({
  label:{fontFamily:FONTS.bold,fontWeight:'700',color:COLORS.primary,marginTop:10,fontSize:13},
  dutyPanel:{backgroundColor:'#F0F7F1',borderLeftColor:'#16A34A',borderLeftWidth:5,borderRadius:16,padding:15,gap:5},
  infoRow:{flexDirection:'row',gap:12,flexWrap:'wrap',marginTop:6},
+ overdueTimes:{flexDirection:'column',gap:2},
  flatCard:{borderRadius:14,marginBottom:0,gap:9},
  handover:{backgroundColor:COLORS.surface,borderColor:COLORS.border,borderWidth:1,borderRadius:15,padding:15,gap:10},
  input:{borderWidth:1,borderColor:COLORS.border,borderRadius:10,minHeight:90,padding:12,textAlignVertical:'top',
+  color:COLORS.text,fontSize:14,backgroundColor:COLORS.white},
+ checkoutInput:{borderWidth:1,borderColor:COLORS.border,borderRadius:10,minHeight:48,padding:12,
   color:COLORS.text,fontSize:14,backgroundColor:COLORS.white},
  receipt:{backgroundColor:'#F0F7F1',borderRadius:11,padding:12,gap:5},
  receiptHeading:{fontFamily:FONTS.bold,fontWeight:'700',color:COLORS.primary,fontSize:14},

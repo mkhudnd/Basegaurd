@@ -18,8 +18,8 @@ export type Incident = {
   reported_at:string; received_at:string; latitude?:number|null; longitude?:number|null;
 };
 export type Occurrence = {id:string; site_id:string; category:string; narrative:string; event_at:string; received_at:string};
-export type Shift = {id:string; site_id:string; guard_id:string; started_at:string; ended_at:string|null; status:string; post?:string|null; checked_in_at?:string|null; presence_status?:string|null};
-export type Handover = {id:string; site_id:string; notes:string; post?:string|null; equipment?:string|null; incident_ids?:string[]; submitted_at:string; accepted_at:string|null; outgoing_guard_id:string; incoming_guard_id:string|null};
+export type Shift = {id:string; site_id:string; guard_id:string; started_at:string; ended_at:string|null; status:string; post?:string|null; checked_in_at?:string|null; presence_status?:string|null; successor_shift_id?:string|null};
+export type Handover = {id:string; site_id:string; notes:string; post?:string|null; equipment?:string|null; incident_ids?:string[]; submitted_at:string; accepted_at:string|null; outgoing_guard_id:string; incoming_guard_id:string|null; incoming_shift_id?:string|null};
 export type Update = {id:string; author_id:string; created_at:string; update_type:string; note:string};
 export type Profile = {display_name:string; role:string; is_active:boolean};
 export type Feed = {incidents:Incident[]; occurrences:Occurrence[]; shifts:Shift[]; handovers:Handover[]};

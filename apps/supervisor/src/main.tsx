@@ -9,6 +9,8 @@ import {PersonnelWorkspace} from './PersonnelWorkspace';
 import {Badge,Button,Card,Dialog,Icon,Input,Metrics,Select,Table,label,navigation,type Page} from './ui';
 import {OperationsMap} from './operations-map';
 import {SitesWorkspace} from './SitesWorkspace';
+import {RosterWorkspace} from './RosterWorkspace';
+import {OperationsSchedule} from './OperationsSchedule';
 import './style.css';
 
 type Resource<T> = {state:'loading'}|{state:'error';error:string}|{state:'ready';rows:T};
@@ -89,6 +91,7 @@ function Workspace({session}:{session:Session}){
   const [date,setDate]=useState('');
   const [detail,setDetail]=useState<Detail|null>(null);
   const [directorySiteId,setDirectorySiteId]=useState('');
+  const [rosterTarget,setRosterTarget]=useState<{siteId:string;shiftId:string}>();
   const [personnelNames,setPersonnelNames]=useState<Record<string,string>>({});
   const [signOutError,setSignOutError]=useState('');
   const [signingOut,setSigningOut]=useState(false);
@@ -146,7 +149,7 @@ function Workspace({session}:{session:Session}){
 
   function go(next:Page){
     setPage(next);setMenu(false);setSearch('');setFilter('');setDate('');setDetail(null);
-    setDirectorySiteId('');
+    setDirectorySiteId('');setRosterTarget(undefined);
     window.scrollTo(0,0);
   }
   function openMappedSite(id:string){
@@ -154,7 +157,10 @@ function Workspace({session}:{session:Session}){
     setDirectorySiteId(id);
   }
   function chooseSite(id:string){
-    setSiteId(id);setDetail(null);setFilter('');setNow(Date.now());
+    setSiteId(id);setDetail(null);setFilter('');setNow(Date.now());setRosterTarget(undefined);
+  }
+  function openRoster(siteId:string,shiftId:string){
+    go('shifts');chooseSite(siteId);setRosterTarget({siteId,shiftId});
   }
   async function signOut(){
     if(!supabase)return;
@@ -176,7 +182,6 @@ function Workspace({session}:{session:Session}){
   const shifts=ready(data.shifts),incidents=ready(data.incidents),handovers=ready(data.handovers);
   const coverageAvailable=shifts?.every(s=>'presence_status' in s);
   const duty=coverageAvailable?shifts?.filter(s=>isOnDuty(s,now)):undefined;
-  const missed=shifts?.every(s=>'checked_in_at' in s)?shifts?.filter(s=>missedCheckIn(s,now)):undefined;
   const urgent=incidents?.filter(s=>s.status==='reported').sort((a,b)=>Number(['critical','high'].includes(b.severity))-Number(['critical','high'].includes(a.severity)));
   const pending=handovers?.filter(h=>!h.accepted_at);
   const matches=(values:string[],status:string,event:string)=>
@@ -186,7 +191,6 @@ function Workspace({session}:{session:Session}){
   const busy=Boolean(access?.sites.length)&&feedKeys.some(k=>data[k].state==='loading');
   const attention = [
     ...(urgent??[]).map(row=>({id:row.id,title:'Incident needs acknowledgement',note:row.public_number+' · '+label(row.category)+' · '+time(row.received_at),kind:'incident' as const,icon:'incidents' as const,tone:'red',row})),
-    ...(missed??[]).map(row=>({id:row.id,title:'Missed check-in',note:(row.post??siteName(row.site_id))+' · '+time(row.started_at),kind:'shift' as const,icon:'clock' as const,tone:'',row})),
     ...(pending??[]).filter(row=>row.incoming_guard_id||!row.post||!duty?.some(s=>s.site_id===row.site_id&&s.post===row.post)).map(row=>({id:row.id,title:row.incoming_guard_id?'Pending handover':'Handover without assigned relief',note:(row.post??siteName(row.site_id))+' · '+time(row.submitted_at),kind:'handover' as const,icon:'handovers' as const,tone:'green',row})),
   ];
 
@@ -204,23 +208,14 @@ function Workspace({session}:{session:Session}){
       <Badge value={incidentStatus(row)}/>,time(row.reported_at),
     ]}))}/>;
   }
-  function shiftTable(rows:Shift[],filtered=true){
-    const visible=filtered?rows.filter(r=>matches([r.guard_id,guardName(r.guard_id),r.post??'',siteName(r.site_id)],label(shiftStatus(r,now)),r.started_at)):rows;
-    return <Table name="Shift assignments" heads={['Guard reference','Site / post','Scheduled start','Confirmed check-in','Status']} rows={visible.map(row=>({id:row.id,cells:[
-      <button className="text-btn" title={row.guard_id} onClick={()=>setDetail({kind:'shift',row})}>{guardName(row.guard_id)}</button>,
-      <><strong>{siteName(row.site_id)}</strong><span className="sub">{row.post??'Post unavailable'}</span></>,time(row.started_at),
-      row.checked_in_at?time(row.checked_in_at):'checked_in_at' in row?'Not recorded':'Unavailable',<Badge value={shiftStatus(row,now)}/>,
-    ]}))}/>;
-  }
   function coverageRows(){
     return <div className="coverage">{selectedSites.map(s=>{
       const onDuty=duty?.filter(r=>r.site_id===s.id);
       const count=onDuty&&new Set(onDuty.map(r=>r.guard_id)).size;
-      const gaps=missed?.filter(r=>r.site_id===s.id).length;
       return <div className="site-row" key={s.id}>
         <span className="site-icon"><Icon name="sites"/></span><span className="site-name"><strong>{s.name}</strong><small>{s.code}</small></span>
         <span className="site-count">{count===undefined?'Duty unavailable':count+' on duty'}</span>
-        <Badge value={gaps?'Missed check-in':count?'On duty':count===0?'No on-duty guard':'Unavailable'}/>
+        <Badge value={count?'On duty':count===0?'No on-duty guard':'Unavailable'}/>
       </div>;
     })}</div>;
   }
@@ -279,16 +274,18 @@ function Workspace({session}:{session:Session}){
           <Metrics items={[...dashboardMetrics]}/>
           <OperationsMap sites={mapSites} incidentSites={incidentSites} version={version} onSelectSite={chooseSite} onOpenSite={openMappedSite}/>
           <div className="grid">
-            <Card title="Site coverage" subtitle="Confirmed guard presence by site" action={<button className="text-btn" onClick={()=>go('sites')}>View all sites <Icon name="arrow"/></button>}>
+            <Card title="Duty status by site" subtitle="Recorded duty status" action={<button className="text-btn" onClick={()=>go('sites')}>View all sites <Icon name="arrow"/></button>}>
               {coverageRows()}
             </Card>
-            <Card title="Needs attention" subtitle="Incidents, check-ins and handovers">
-              {(data.incidents.state==='error'||data.handovers.state==='error'||data.shifts.state==='error'||(shifts&&!missed))&&<p className="inline-note" role="status">Some attention sources are unavailable.</p>}
+            <Card title="Needs attention" subtitle="Incidents and handovers">
+              {(data.incidents.state==='error'||data.handovers.state==='error')&&<p className="inline-note" role="status">Some attention sources are unavailable.</p>}
               <div className="attention">{attention.slice(0,6).map(a=><button className="att-row" key={a.kind+a.id} onClick={()=>setDetail(a)}>
                 <span className={'att-icon '+a.tone}><Icon name={a.icon}/></span><span><strong>{a.title}</strong><small>{a.note}</small></span>
-              </button>)}{!attention.length&&<p className="empty">{busy?'Loading items…':urgent&&missed&&pending?'No items need attention.':'Attention data is incomplete.'}</p>}</div>
+              </button>)}{!attention.length&&<p className="empty">{busy?'Loading items…':urgent&&pending?'No incidents or handovers need attention.':'Attention data is incomplete.'}</p>}</div>
             </Card>
           </div>
+          <OperationsSchedule sites={selectedSites} version={version+userRefresh} names={personnelNames}
+            onOpen={openRoster} onRefresh={refresh}/>
           <Card className="lower" title="Recent incidents" subtitle="Latest reports received from the field" action={<button className="text-btn" onClick={()=>go('incidents')}>View all incidents <Icon name="arrow"/></button>}>
             <Source resource={data.incidents}>{rows=>incidentTable(rows)}</Source>
           </Card>
@@ -308,14 +305,9 @@ function Workspace({session}:{session:Session}){
               time(row.event_at),label(row.category),<span className="record-copy">{row.narrative}</span>,siteName(row.site_id),time(row.received_at),<button className="text-btn" onClick={()=>setDetail({kind:'occurrence',row})}>Open entry</button>,
             ]}))}/>}</Source><p className="inline-note">This report excludes amendments. Follow your approved occurrence-book procedures.</p>
         </Card>}
-        {page==='shifts'&&<div className="listing"><Metrics items={[
-          dashboardMetrics[0],{title:'Scheduled',value:shifts?.filter(s=>s.status==='scheduled'&&Date.parse(s.started_at)>now).length,note:'Upcoming shift records',icon:'clock'},
-          {title:'Missed check-ins',value:missed?.length,note:'Scheduled shifts currently due',icon:'warning'},
-          {title:'Guards in roster',value:shifts&&new Set(shifts.map(s=>s.guard_id)).size,note:'Distinct guards on visible shifts',icon:'guards'},
-        ]}/><Card title="Shift roster" subtitle="Scheduled assignments and recorded check-ins">
-          {filters(['On duty','On break','Active shift','Scheduled','Missed check-in','Completed','Cancelled'])}
-          <Source resource={data.shifts}>{rows=>shiftTable(rows)}</Source>
-        </Card></div>}
+        {page==='shifts'&&<RosterWorkspace sites={sites} siteId={siteId} onSiteChange={chooseSite}
+          refreshVersion={version} onRefresh={refresh} admin={access?.profile.role==='admin'}
+          names={personnelNames} operational={shifts} handovers={handovers} initialShift={rosterTarget}/>}
         {page==='handovers'&&<Card className="listing" title="Handover register" subtitle="Acknowledgement is based on the recorded server timestamp">
           {filters(['Pending','Acknowledged','No recipient assigned'])}<Source resource={data.handovers}>{rows=><Table name="Shift handovers" heads={['Site / post','Outgoing guard','Incoming guard','Submitted','Status','Action']}
             rows={rows.filter(r=>matches([siteName(r.site_id),r.post??'',r.notes,r.outgoing_guard_id,guardName(r.outgoing_guard_id),r.incoming_guard_id??'',guardName(r.incoming_guard_id)],handoverStatus(r),r.submitted_at)).map(row=>({id:row.id,cells:[

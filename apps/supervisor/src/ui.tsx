@@ -5,7 +5,7 @@ export const navigation = [
   ['incidents','Incidents','Incident management','Review reports received from your permitted sites.'],
   ['occurrence','Occurrence Book','Digital occurrence book','Search and print records received from the field.'],
   ['guards','Guards','Guards & personnel','Review site-scoped identities, duty state and operational history.'],
-  ['shifts','Shifts','Shifts & coverage','See scheduled assignments and confirmed check-ins.'],
+  ['shifts','Shifts','Shifts & coverage','Schedule guard assignments and review recorded attendance.'],
   ['handovers','Handovers','Shift handovers','Review submitted handovers and incoming guard acknowledgement.'],
   ['sites','Sites','Sites & geography','Manage your authorized sites, perimeters and security posts.'],
   ['live','Live Operations','Live operations','View authorized sites and urgent incident indicators.'],
@@ -54,9 +54,9 @@ export function Select(props:ComponentPropsWithoutRef<'select'>) {
 }
 
 export function Badge({value}:{value:string}) {
-  const tone = /critical|high|missed|needs review|coverage gap/i.test(value) ? 'red'
-    : /pending|medium|scheduled|reported|in progress/i.test(value) ? 'amber'
-    : /on duty|confirmed|acknowledged|resolved|covered|received|active account|active assignment/i.test(value) ? 'green' : 'gray';
+  const tone = /critical|high|missed|overdue active duty|needs review|coverage gap/i.test(value) ? 'red'
+    : /pending|medium|scheduled|awaiting check-in|on break|reported|in progress/i.test(value) ? 'amber'
+    : /on duty|active duty|confirmed|acknowledged|resolved|covered|received|active account|active assignment/i.test(value) ? 'green' : 'gray';
   return <span className={'badge '+tone}>{label(value)}</span>;
 }
 export function Card({title,subtitle,action,children,className=''}:{title:string;subtitle?:string;action?:ReactNode;children:ReactNode;className?:string}) {

@@ -48,7 +48,10 @@ function InnerApp(){
  const [busy,setBusy]=useState(false),[syncBusy,setSyncBusy]=useState(false);
  const [presenceBusy,setPresenceBusy]=useState(false);
  const [message,setMessage]=useState(''),[syncSummary,setSyncSummary]=useState<string|null>(null);
- const [duty,setDuty]=useState<Duty|null>(null),[dutySource,setDutySource]=useState<DutyResult['source']>('none');
+ const [activeDuty,setDuty]=useState<Duty|null>(null),[dutySource,setDutySource]=useState<DutyResult['source']>('none');
+ const [overdueDuty,setOverdueDuty]=useState<Duty|null>(null);
+ const [endDutySelection,setEndDutySelection]=useState<{duty:Duty;overdue:boolean}|null>(null);
+ const [dutyClock,setDutyClock]=useState(Date.now);
  const [dutyError,setDutyError]=useState<string|null>(null),[guardName,setGuardName]=useState<string|null>(null);
  const [records,setRecords]=useState<LocalRecord[]>([]),[serverIncidents,setServerIncidents]=useState<ServerIncident[]>([]),[serverOccurrences,setServerOccurrences]=useState<ServerOccurrence[]>([]);
  const [remoteNames,setRemoteNames]=useState<Record<string,string>>({}),[historyError,setHistoryError]=useState<string|null>(null);
@@ -66,11 +69,15 @@ function InnerApp(){
  const saving=useRef({current:false}).current,syncing=useRef(false),uidRef=useRef<string|null>(null);
  const uid=session?.user.id??null;
  const isOnline=connection===true;
+ const elapsedDuty=activeDuty?.guard_id===uid&&activeDuty.ended_at&&Date.parse(activeDuty.ended_at)<=dutyClock?activeDuty:null;
+ const duty=activeDuty?.guard_id===uid&&!elapsedDuty?activeDuty:null;
+ const recoveryDuty=overdueDuty?.guard_id===uid?overdueDuty:elapsedDuty;
+ const endDutyTarget=duty??recoveryDuty;
  const siteNames=useMemo(()=>duty?{...remoteNames,[duty.site_id]:duty.site_name}:remoteNames,[remoteNames,duty]);
  const selectedLocal=records.find(record=>record.id===selectedId)??null;
  const pending=records.filter(record=>record.state!=='received');
  const pendingOps=handoverOps.filter(o=>o.state!=='received');
- const endDutyStatus=getEndDutyStatus(handoverOps,duty?.shift_id);
+ const endDutyStatus=getEndDutyStatus(handoverOps,endDutyTarget?.shift_id);
  const pendingEnd=endDutyStatus==='queued'||endDutyStatus==='sending'||endDutyStatus==='failed';
  const receivedEnd=endDutyStatus==='received';
  const endDutyRecorded=pendingEnd||receivedEnd;
@@ -92,7 +99,8 @@ function InnerApp(){
   try{
    const [dutyResult,local,ops,photoRows]=await Promise.all([loadDuty(id),loadLocalRecords(id),listHandoverOps(id),listPhotos(id)]);
    if(uidRef.current!==id)return;
-   setDuty(dutyResult.duty);setDutySource(dutyResult.source);setDutyError(dutyResult.error);
+   setDutyClock(Date.now());setDuty(dutyResult.duty);setOverdueDuty(dutyResult.recovery);
+   setDutySource(dutyResult.source);setDutyError(dutyResult.error);
    setRecords(local);
    setHandoverOps(ops);
    setPhotos(photoRows);
@@ -141,7 +149,7 @@ function InnerApp(){
  useEffect(()=>{
   uidRef.current=uid;
   setHandoverOps([]);setPhotos([]);setSourceOb(null);
-  setDuty(null);setDutySource('none');setDutyError(null);setRecords([]);setServerIncidents([]);setServerOccurrences([]);
+  setDuty(null);setOverdueDuty(null);setEndDutySelection(null);setDutySource('none');setDutyError(null);setRecords([]);setServerIncidents([]);setServerOccurrences([]);
   setRemoteNames({});setGuardName(null);setHistoryError(null);setDetailServer(null);setDetailError(null);
   setPage('tabs');setTab('today');setSelectedId(null);setSavedFallback(null);setMessage('');setPresenceBusy(false);
   if(!uid||accountRole!=='guard')return;
@@ -156,12 +164,12 @@ function InnerApp(){
   return ()=>{current=false;};
  },[uid,isOnline,accountRole,refresh]);
  useEffect(()=>{
-  if(page==='endDuty'&&!duty&&!initialDataLoading){
-   const unsentEnd=handoverOps.some(o=>o.kind==='submit'&&o.state!=='received');
-   setPage('tabs');setTab('today');
-   setMessage(unsentEnd?'End duty is saved on this phone and is waiting to sync. Open the sync queue to review it.':'The active assignment is no longer available. Check the sync queue for the end-duty receipt.');
-  }
- },[page,duty,initialDataLoading,handoverOps]);
+  if(!activeDuty?.ended_at)return;
+  const expiry=Date.parse(activeDuty.ended_at), remaining=expiry-Date.now();
+  if(!Number.isFinite(expiry)||expiry<=dutyClock)return;
+  const timer=setTimeout(()=>setDutyClock(Date.now()),Math.min(Math.max(0,remaining),2_147_483_647));
+  return ()=>clearTimeout(timer);
+ },[activeDuty?.ended_at,dutyClock]);
  useEffect(()=>{
   const listener=AppState.addEventListener('change',value=>{
    if(value==='active'&&uid&&accountRole==='guard'){
@@ -212,7 +220,9 @@ function InnerApp(){
     Alert.alert('Duty status not changed',error instanceof Error?error.message:'The server did not confirm this change.');
   }finally{setPresenceBusy(false);}
  }
- function openOffDutyHandover(){if(duty)setPage('endDuty');}
+ function openOffDutyHandover(){
+  if(endDutyTarget){setEndDutySelection({duty:endDutyTarget,overdue:!!recoveryDuty&&!duty});setPage('endDuty');}
+ }
  function safetyInstructions(){
   Alert.alert('Emergency procedures',
    'Use approved emergency telephone or radio procedures for urgent assistance. Automated SOS reporting is not yet active in SmartOps.');
@@ -345,6 +355,7 @@ function InnerApp(){
    accountRole==='supervisor'||accountRole==='admin' ? <SupervisorWorkspace userId={uid!} onSignOut={async()=>{const {error}=await supabase.auth.signOut();if(error)throw error;}}/>:
    accountRole==='guard' ? <>
    {page==='tabs'&&tab==='today'&&<TodaysDutyScreen guardId={uid!} shiftContext={shiftContext} isCachedDuty={dutySource==='cache'}
+    recoveryDuty={recoveryDuty}
     endDutyPending={pendingEnd}
     endDutyReceived={receivedEnd}
     dutyError={dutyError} notice={message||null} isLoadingShift={initialDataLoading} isOnline={isOnline}
@@ -356,7 +367,7 @@ function InnerApp(){
       r.state==='received' && r.received_at && (!latest || Date.parse(r.received_at)>Date.parse(latest)) ? r.received_at : latest,null)}
     recentActivity={activityItems(records.filter(r=>r.shift_id===shiftContext?.shiftId),siteNames)}
     activeTab="today" onSelectTab={selectTab} onReportIncident={startIncident}
-    onNewOccurrence={()=>{if(!endDutyRecorded){setTab('ob');setObOpenRequest(n=>n+1);setMessage('');}}}
+    onNewOccurrence={()=>{if(duty&&!endDutyRecorded){setTab('ob');setObOpenRequest(n=>n+1);setMessage('');}}}
     onOpenMyIncidents={()=>selectTab('incidents')} onOpenSyncQueue={openQueue}
     onSelectActivityItem={item=>openDetails(item.id,'history')}
     onRefreshShift={()=>{if(uid)void refresh(uid).catch(e=>setMessage(String(e)));}} onSignOut={()=>void logout()}
@@ -370,14 +381,18 @@ function InnerApp(){
    {page==='tabs'&&tab==='ob'&&<OccurrenceBookScreen
     rows={obRows} isOnline={isOnline} hasDuty={!!duty&&!endDutyRecorded} dutyStatus={duty?.presence_status==='on_break'?'On Break':'On Duty'}
     pendingCount={pending.length} error={message||historyError} saving={busy} openEntryRequest={obOpenRequest}
-    activeShiftId={duty?.shift_id} onReportEntry={row=>{if(row.linkedIncidentId){openDetails(row.linkedIncidentId,'history');return;}setSourceOb(row);setPage('incidentForm');}}
+    activeShiftId={duty?.shift_id} onReportEntry={row=>{
+     if(row.linkedIncidentId){openDetails(row.linkedIncidentId,'history');return;}
+     if(duty?.shift_id!==row.shiftId||endDutyRecorded)return;
+     setSourceOb(row);setPage('incidentForm');
+    }}
     onSave={saveOb} onSelectTab={selectTab} onOpenSyncQueue={openQueue}
     onOpenDuty={()=>selectTab('today')} onOpenDraftChange={setObForm} onRequestConsumed={()=>setObOpenRequest(0)}
     onRefresh={()=>{if(uid)void refreshServer(uid);}}/>}
    {page==='tabs'&&tab==='handover'&&<View style={styles.panel}>
     <AppHeader title="Handover" subtitle="Prepare for shift change" isOnline={isOnline} pendingCount={pending.length} onPressSyncBadge={openQueue}/>
     <ScrollView contentContainerStyle={styles.panelContent}>
-     <HandoverPanel key={uid} actor={uid!} duty={duty} online={isOnline} endDutyStatus={endDutyStatus}
+     <HandoverPanel key={uid} actor={uid!} duty={endDutyTarget} overdue={!!recoveryDuty&&!duty} online={isOnline} endDutyStatus={endDutyStatus}
       onRequestEndDuty={openOffDutyHandover} onDelivered={()=>isOnline?refresh(uid!):refreshLocal(uid!)}/>
     </ScrollView><BottomNavBar activeTab="handover" onSelectTab={selectTab} unsyncedCount={pending.length}/>
    </View>}
@@ -387,7 +402,10 @@ function InnerApp(){
     isSubmitting={busy} storageError={message||null}
     onSubmitIncident={saveIncident} onCancel={()=>{setPage('tabs');setTab('incidents');}}
     onOpenSyncQueue={openQueue}/>}
-   {page==='endDuty'&&duty&&<EndDutyScreen actor={uid!} duty={duty} guardName={guardName} online={isOnline}
+   {page==='endDuty'&&endDutySelection?.duty.guard_id===uid&&<EndDutyScreen key={endDutySelection.duty.shift_id}
+    actor={uid!} duty={endDutySelection.duty} guardName={guardName} online={isOnline}
+    overdue={endDutySelection.overdue||recoveryDuty?.shift_id===endDutySelection.duty.shift_id}
+    canSubmit={!initialDataLoading&&endDutyTarget?.shift_id===endDutySelection.duty.shift_id}
     records={records} operations={handoverOps} incidents={serverIncidents} onRefresh={()=>isOnline?refresh(uid!):refreshLocal(uid!)}
     onBack={()=>{setTab('today');setPage('tabs');}} onQueue={openQueue}/>}
    {page==='submission'&&submission&&<SubmissionStatusScreen record={submission} isOnline={isOnline}

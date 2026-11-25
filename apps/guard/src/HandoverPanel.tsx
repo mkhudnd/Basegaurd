@@ -10,7 +10,7 @@ type Incoming={
  id:string;notes:string;equipment?:string;post?:string;outgoing_guard_id:string;accepted_by?:string;
  submitted_at:string;incident_ids?:string[];accepted_at:string|null;
 };
-type Props={actor:string;duty:Duty|null;online:boolean;endDutyStatus:EndDutyStatus;
+type Props={actor:string;duty:Duty|null;overdue:boolean;online:boolean;endDutyStatus:EndDutyStatus;
  onRequestEndDuty:()=>void;onDelivered:()=>Promise<void>;};
 
 const statusText:Record<EndDutyStatus,string>={
@@ -22,7 +22,7 @@ const statusText:Record<EndDutyStatus,string>={
  'legacy-handover':'An older outgoing handover has no end-duty timestamp. Ask a supervisor to verify the shift state.',
 };
 
-export function HandoverPanel({actor,duty,online,endDutyStatus,onRequestEndDuty,onDelivered}:Props){
+export function HandoverPanel({actor,duty,overdue,online,endDutyStatus,onRequestEndDuty,onDelivered}:Props){
  const [incoming,setIncoming]=useState<Incoming[]>([]);
  const [ops,setOps]=useState<{id:string;state:string;error:string|null}[]>([]);
  const [busy,setBusy]=useState(false);
@@ -66,6 +66,7 @@ export function HandoverPanel({actor,duty,online,endDutyStatus,onRequestEndDuty,
    <Text style={styles.eyebrow}>OUTGOING SHIFT</Text>
    <Text style={styles.display}>{duty?.post||'No assigned post'}</Text>
    <Text style={styles.body}>{duty?.site_name||'No active assignment'}</Text>
+   {overdue&&<Text style={styles.status}>Overdue duty · End Duty only</Text>}
    <View style={styles.statusLine}>
     <Text accessibilityLiveRegion="polite" style={endDutyStatus==='legacy-handover'?styles.error:styles.status}>
      {statusText[endDutyStatus]}

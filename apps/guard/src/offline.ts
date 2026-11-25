@@ -72,13 +72,18 @@ export async function storeDuty(duty: Duty) {
  ended_at=excluded.ended_at,fetched_at=excluded.fetched_at`,
  duty.guard_id,duty.shift_id,duty.site_id,duty.site_name,duty.started_at,duty.ended_at,duty.fetched_at);
 }
-export async function cachedDuty(guardId: string): Promise<Duty | null> {
+export async function cachedDuty(guardId: string, mode: 'operational' | 'recovery' = 'operational'): Promise<Duty | null> {
  const d = await db();
  const record = await d.getFirstAsync<{guard_id:string;shift_id:string;site_id:string;site_name:string;started_at:string;ended_at:string|null;fetched_at:string}>(
   'SELECT * FROM cached_duty WHERE guard_id = ?',guardId);
- if (!record || Date.now()-Date.parse(record.fetched_at)>12*60*60*1000) return null;
- if (record.ended_at && Date.parse(record.ended_at)<Date.now()) return null;
+ if (!record) return null;
+ const now=Date.now(), verifiedAt=Date.parse(record.fetched_at);
+ const expired=record.ended_at!==null && Date.parse(record.ended_at)<=now;
+ if (!Number.isFinite(verifiedAt) || (mode==='recovery'
+  ? !expired || now-verifiedAt>7*24*60*60*1000
+  : expired || now-verifiedAt>12*60*60*1000)) return null;
  const roster=await d.getFirstAsync<{post:string|null;successor_shift_id:string|null}>('SELECT post,successor AS successor_shift_id FROM duty_roster WHERE guard_id=? AND shift_id=?',guardId,record.shift_id);
+ if (mode==='recovery'&&!roster) return null;
  return {...record,...roster};
 }
 export async function queueRecord(kind: Kind, guard: Duty, data: Record<string,string>,photoUri?:string) {

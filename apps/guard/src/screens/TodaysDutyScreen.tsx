@@ -1,5 +1,6 @@
 import React, {useEffect,useState} from 'react';
 import {supabase} from '../api';
+import type {Duty} from '../offline';
 import {DutySummaryPanel,OperationalTaskRow} from '../OperationalMaterial';
 import {
   ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet,
@@ -51,6 +52,7 @@ export interface TodaysDutyScreenProps {
   successorAssigned:boolean;
   openIncidentCount:number|null;
   shiftContext: VerifiedShiftContext | null;
+  recoveryDuty: Duty | null;
   isCachedDuty?: boolean;
   dutyError?: string | null;
   notice?: string | null;
@@ -112,7 +114,7 @@ function ActivityItem({item,onPress}: {item:ActivitySummaryItem;onPress:()=>void
 }
 
 export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
-  guardId,todayCount,endDutyPending=false,endDutyReceived=false,profileName,successorAssigned,openIncidentCount,shiftContext,isCachedDuty=false,dutyError=null,notice=null,isLoadingShift=false,
+  guardId,todayCount,endDutyPending=false,endDutyReceived=false,profileName,successorAssigned,openIncidentCount,shiftContext,recoveryDuty,isCachedDuty=false,dutyError=null,notice=null,isLoadingShift=false,
   isOnline,isUpdatingPresence=false,pendingSyncCount,failedSyncCount=0,recentActivity,latestReceipt,
   activeTab='today',onSelectTab,onReportIncident,onNewOccurrence,onOpenMyIncidents,
   onOpenSyncQueue,onOpenHandover,onSafetyProcedures,onChangePresence,onRequestOffDuty,
@@ -131,7 +133,7 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
   useEffect(()=>{
     let current=true;
     setScheduled(null);
-    if(isOnline && !shiftContext && !isLoadingShift){
+    if(isOnline && !shiftContext && !recoveryDuty && !isLoadingShift){
       const now=new Date().toISOString();
       void supabase.from('shifts').select('*,sites(name)').eq('guard_id',guardId)
         .eq('status','scheduled').or('ended_at.is.null,ended_at.gt.'+now)
@@ -143,8 +145,8 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
         });
     }
     return ()=>{current=false;};
-  },[guardId,isOnline,isLoadingShift,shiftContext?.shiftId]);
-  const nextShift=isOnline && scheduled?.guard===guardId?scheduled:null;
+  },[guardId,isOnline,isLoadingShift,shiftContext?.shiftId,recoveryDuty?.shift_id]);
+  const nextShift=isOnline && !recoveryDuty && scheduled?.guard===guardId?scheduled:null;
   const totalUnsent=pendingSyncCount+failedSyncCount;
   const presence: DutyPresence|null = !isCachedDuty ? (shiftContext?.presenceStatus??null) : null;
   const canChange = canChangeDutyPresence({shiftId:shiftContext?.shiftId,isOnline,isCachedDuty,isBusy:isUpdatingPresence||endDutyPending||endDutyReceived});
@@ -164,7 +166,7 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
       greeting={new Date().getHours()<12?'Good morning':new Date().getHours()<18?'Good afternoon':'Good evening'}
       name={firstName}
       heading="Current duty"
-      subtitle={shiftContext?.siteName??nextShift?.site??'Guard workspace'}
+      subtitle={shiftContext?.siteName??recoveryDuty?.site_name??nextShift?.site??'Guard workspace'}
       brandAction={<HomeHeaderControl kind="icon" accessibilityLabel="View shift details"
         onPress={()=>{setSheetMode('details');setMenuOpen(true);}}>
         <View style={{width:32,height:32,borderRadius:16,backgroundColor:'#285748',alignItems:'center',justifyContent:'center'}}>
@@ -173,22 +175,25 @@ export const TodaysDutyScreen:React.FC<TodaysDutyScreenProps> = ({
       </HomeHeaderControl>}
     />
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
-      {dutyError?<InfoAlertBanner tone="danger" title="Duty status needs attention" body={dutyError}/>:null}
+      {dutyError&&!(recoveryDuty&&isCachedDuty&&!isOnline)?<InfoAlertBanner tone="danger" title="Duty status needs attention" body={dutyError}/>:null}
       {notice?<InfoAlertBanner tone="warning" title="Action needs attention" body={notice}/>:null}
       {endDutyPending?<InfoAlertBanner tone="offline" title="End duty waiting for server" body="The end-duty request is saved on this phone. Open End duty to review or retry."/>:null}
       {endDutyReceived?<InfoAlertBanner tone="success" title="End duty received" body="The server has recorded the end of this shift. Refresh to load your current assignment."/>:null}
+      {recoveryDuty?<InfoAlertBanner tone="warning" title={isCachedDuty?'Cached overdue duty':'Overdue duty'}
+        body={`Reporting window ended at ${timeOnly(recoveryDuty.ended_at)}. ${isCachedDuty?
+          'You can save End Duty offline for server review on reconnect.':'Complete End Duty before starting another shift.'}`}/>:null}
 
       <DutySummaryPanel
-        post={shiftContext?.post??nextShift?.post??'Post not recorded'}
-        site={shiftContext?.siteName??nextShift?.site??(isLoadingShift?'Checking assignment…':'No active assignment')}
-        status={shiftContext?(isCachedDuty?'Cached duty':statusLabel):'Off duty'}
-        start={shiftContext?timeOnly(shiftContext.startedAt):nextShift?timeOnly(nextShift.start):'—'}
+        post={shiftContext?.post??recoveryDuty?.post??nextShift?.post??'Post not recorded'}
+        site={shiftContext?.siteName??recoveryDuty?.site_name??nextShift?.site??(isLoadingShift?'Checking assignment…':'No active assignment')}
+        status={recoveryDuty?'Overdue · End Duty only':shiftContext?(isCachedDuty?'Cached duty':statusLabel):'Off duty'}
+        start={timeOnly(shiftContext?.startedAt??recoveryDuty?.started_at??nextShift?.start)}
         scheduledEnd={shiftContext?.endedAt?timeOnly(shiftContext.endedAt):'Not recorded'}
-        actionLabel={shiftContext?(endDutyPending||endDutyReceived?'Review End Duty':'View shift / End Duty'):'Start duty'}
-        actionDisabled={!shiftContext&&(!nextShift||!isOnline||Date.parse(nextShift.start)>Date.now())}
+        actionLabel={recoveryDuty?'Review End Duty':shiftContext?(endDutyPending||endDutyReceived?'Review End Duty':'View shift / End Duty'):'Start duty'}
+        actionDisabled={!shiftContext&&!recoveryDuty&&(!nextShift||!isOnline||Date.parse(nextShift.start)>Date.now())}
         notice={successorAssigned?'Relief is assigned. Incoming guard acceptance is verified separately.':undefined}
         onAction={async()=>{
-          if(shiftContext){onRequestOffDuty();return;}
+          if(shiftContext||recoveryDuty){onRequestOffDuty();return;}
           if(nextShift){
             const {error}=await supabase.rpc('start_guard_duty',{p_shift_id:nextShift.id});
             if(error)Alert.alert('Duty start failed',error.message);

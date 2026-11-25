@@ -12,7 +12,7 @@ export type ServerIncidentUpdate={id:string;author_id?:string;update_type:'ackno
 export type ServerOccurrence={id:string;shift_id:string;site_id:string;category:string;narrative:string;event_at:string;received_at:string};
 export type ServerHistory={incidents:ServerIncident[];occurrences:ServerOccurrence[];siteNames:Record<string,string>};
 
-export type DutyResult = {duty: Duty | null; source: 'server' | 'cache' | 'none'; error: string | null};
+export type DutyResult = {duty: Duty | null; recovery: Duty | null; source: 'server' | 'cache' | 'none'; error: string | null};
 
 /** A cached assignment permits a local save; the RPC rechecks it at transmission. */
 export async function loadDuty(guardId: string): Promise<DutyResult> {
@@ -20,11 +20,11 @@ export async function loadDuty(guardId: string): Promise<DutyResult> {
   const {data,error}=await supabase.from('shifts').select('*')
    .eq('guard_id',guardId).eq('status','active').order('started_at',{ascending:false}).limit(1);
   if(error) throw error;
-  const shift=data?.find(s=>Date.parse(s.started_at)<=Date.now()&&(!s.ended_at||Date.parse(s.ended_at)>Date.now()));
+  const shift=data?.find(s=>Date.parse(s.started_at)<=Date.now());
   if(!shift){
    const local=await db();
    await local.runAsync('DELETE FROM cached_duty WHERE guard_id=?',guardId);
-   return {duty:null,source:'none',error:null};
+   return {duty:null,recovery:null,source:'none',error:null};
   }
   const {data:site,error:siteError}=await supabase.from('sites').select('name').eq('id',shift.site_id).single();
   if(siteError) throw siteError;
@@ -33,10 +33,12 @@ export async function loadDuty(guardId: string): Promise<DutyResult> {
    presence_status:shift.presence_status as DutyPresence,
    presence_updated_at:shift.presence_updated_at??null};
   await storeDuty(duty);
-  return {duty,source:'server',error:null};
+  const overdue=duty.ended_at!==null && Date.parse(duty.ended_at)<=Date.now();
+  return {duty:overdue?null:duty,recovery:overdue?duty:null,source:'server',error:null};
  } catch(e) {
-  const duty=await cachedDuty(guardId);
-  return {duty,source:duty?'cache':'none',error:e instanceof Error?e.message:'Duty refresh failed'};
+  const recovery=await cachedDuty(guardId,'recovery');
+  const duty=recovery?null:await cachedDuty(guardId);
+  return {duty,recovery,source:duty||recovery?'cache':'none',error:e instanceof Error?e.message:'Duty refresh failed'};
  }
 }
 

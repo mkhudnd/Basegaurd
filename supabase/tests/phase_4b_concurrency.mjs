@@ -5,10 +5,11 @@ import {setTimeout as delay} from 'node:timers/promises';
 
 // The fixtures commit so parallel connections can see them. Restrict this
 // runner to the disposable, network-isolated container from the replay guide.
-const container = 'baseguard-phase4b-review';
+const container = process.argv.includes('--phase5b') ? 'baseguard-phase5b-review' : 'baseguard-phase4b-review';
 const runId = randomUUID().slice(0, 8).toUpperCase();
 const admin = randomUUID();
 const guard = randomUUID();
+const activationGuard = randomUUID();
 const adminRole = `set local role authenticated; set local request.jwt.claim.sub='${admin}';`;
 const guardRole = `set local role authenticated; set local request.jwt.claim.sub='${guard}';`;
 
@@ -76,9 +77,10 @@ async function race(name, firstSql, secondSql, expectedState) {
 }
 
 await query(`
-  insert into auth.users(id) values ('${admin}'),('${guard}');
+  insert into auth.users(id) values ('${admin}'),('${guard}'),('${activationGuard}');
   insert into public.profiles(id,display_name,role,is_active)
-  values ('${admin}','Concurrency admin','admin',true), ('${guard}','Concurrency guard','guard',true);
+  values ('${admin}','Concurrency admin','admin',true), ('${guard}','Concurrency guard','guard',true),
+    ('${activationGuard}','Activation guard','guard',true);
 `);
 async function site(suffix) {
   return query(`begin; ${adminRole}
@@ -93,9 +95,9 @@ const deactivationBeforeIncident = await site('J');
 const geographySave = (revision, details) =>
   `select public.save_site_geography('${geography}',${revision},'${details}',null,null);`;
 const deactivate = id => `select public.update_managed_site('${id}',1,'Concurrency site',false);`;
-const insertShift = (siteId, shiftId = randomUUID()) => `
+const insertShift = (siteId, shiftId = randomUUID(), scheduledGuard = guard) => `
   insert into public.shifts(id,site_id,guard_id,started_at,ended_at,status)
-  values ('${shiftId}','${siteId}','${guard}',now()-interval '1 minute',now()+interval '1 hour','scheduled');`;
+  values ('${shiftId}','${siteId}','${scheduledGuard}',now()-interval '1 minute',now()+interval '1 hour','scheduled');`;
 
 await race('geography-first-insert', adminRole + geographySave(0, 'First writer'),
   adminRole + geographySave(0, 'Second writer'), 'PT409');
@@ -106,10 +108,11 @@ assert.equal(await query(`select revision || ':' || details from public.site_geo
 await race('schedule-before-deactivation', insertShift(rosterFirst), adminRole + deactivate(rosterFirst), '23514');
 await race('deactivation-before-schedule', adminRole + deactivate(deactivationFirst), insertShift(deactivationFirst), '23514');
 const shiftId = randomUUID();
-await query(`insert into public.site_assignments(user_id,site_id,role_at_site) values ('${guard}','${activation}','guard');
-  ${insertShift(activation, shiftId)}`);
+await query(`insert into public.site_assignments(user_id,site_id,role_at_site) values ('${activationGuard}','${activation}','guard');
+  ${insertShift(activation, shiftId, activationGuard)}`);
 await race('guard-activation-before-deactivation',
-  guardRole + `select public.start_guard_duty('${shiftId}');`, adminRole + deactivate(activation), '23514');
+  `set local role authenticated; set local request.jwt.claim.sub='${activationGuard}';
+   select public.start_guard_duty('${shiftId}');`, adminRole + deactivate(activation), '23514');
 
 async function lateReport(siteId) {
   const shift = randomUUID();
