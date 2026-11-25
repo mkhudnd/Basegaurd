@@ -1,4 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
+import type {ManagedSite, SecurityPost, SitePoint, SiteBoundary} from './site-geography';
 import {harareDayRange,safeSearchTerm,validateAcknowledgementReceipt,validateResponseReceipt,type IncidentSort} from './incident-domain';
 import {safePersonnelSearch,validatePersonnelPage,type PersonnelPage,type PersonnelRecord,type PersonnelSort} from './personnel-domain';
 
@@ -22,6 +23,50 @@ export type Handover = {id:string; site_id:string; notes:string; post?:string|nu
 export type Update = {id:string; author_id:string; created_at:string; update_type:string; note:string};
 export type Profile = {display_name:string; role:string; is_active:boolean};
 export type Feed = {incidents:Incident[]; occurrences:Occurrence[]; shifts:Shift[]; handovers:Handover[]};
+
+export function listManagedSites(signal: AbortSignal) {
+  return collect<ManagedSite>((start, end) =>
+    client().rpc('list_managed_sites', {p_site_id: null}).range(start, end).abortSignal(signal));
+}
+
+export function listSecurityPosts(siteId: string, signal: AbortSignal) {
+  return collect<SecurityPost>((start, end) =>
+    client().rpc('list_site_security_posts', {p_site_id: siteId}).range(start, end).abortSignal(signal));
+}
+
+async function geographyMutation<T extends {id: string; revision: number}>(
+  rpc: string, args: Record<string, unknown>, expectedId?: string, expectedSite?: string,
+): Promise<T> {
+  const {data, error} = await client().rpc(rpc, args);
+  if (error) throw error;
+  if (!data || typeof data.id !== 'string' || !Number.isSafeInteger(data.revision) || data.revision < 1
+      || (expectedId && expectedId !== data.id) || (expectedSite && expectedSite !== data.site_id)) {
+    throw new Error('The server returned an invalid save receipt. Refresh before retrying.');
+  }
+  return data as T;
+}
+
+export const createManagedSite = (code: string, name: string) =>
+  geographyMutation<ManagedSite>('create_managed_site', {p_code: code, p_name: name});
+
+export const updateManagedSite = (site: ManagedSite, name: string, active: boolean) =>
+  geographyMutation<ManagedSite>('update_managed_site', {
+    p_site_id: site.id, p_expected_revision: site.revision, p_name: name, p_is_active: active,
+  }, site.id);
+
+export const saveSiteGeography = (site: ManagedSite, details: string, center: SitePoint | null, boundary: SiteBoundary | null) =>
+  geographyMutation<ManagedSite>('save_site_geography', {
+    p_site_id: site.id, p_expected_revision: site.geography_revision,
+    p_details: details, p_center: center, p_boundary: boundary,
+  }, site.id);
+
+export function saveSecurityPost(siteId: string, post: SecurityPost | null,
+  code: string, name: string, active: boolean, location: SitePoint | null) {
+  const fields = {p_site_id: siteId, p_code: code, p_name: name, p_location: location};
+  return post ? geographyMutation<SecurityPost>('update_security_post', {
+    ...fields, p_post_id: post.id, p_expected_revision: post.revision, p_is_active: active,
+  }, post.id, siteId) : geographyMutation<SecurityPost>('create_security_post', fields, undefined, siteId);
+}
 
 export function errorMessage(error:unknown, fallback:string) {
   return error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'

@@ -8,6 +8,7 @@ import {IncidentWorkspace} from './IncidentWorkspace';
 import {PersonnelWorkspace} from './PersonnelWorkspace';
 import {Badge,Button,Card,Dialog,Icon,Input,Metrics,Select,Table,label,navigation,type Page} from './ui';
 import {OperationsMap} from './operations-map';
+import {SitesWorkspace} from './SitesWorkspace';
 import './style.css';
 
 type Resource<T> = {state:'loading'}|{state:'error';error:string}|{state:'ready';rows:T};
@@ -87,6 +88,7 @@ function Workspace({session}:{session:Session}){
   const [filter,setFilter]=useState('');
   const [date,setDate]=useState('');
   const [detail,setDetail]=useState<Detail|null>(null);
+  const [directorySiteId,setDirectorySiteId]=useState('');
   const [personnelNames,setPersonnelNames]=useState<Record<string,string>>({});
   const [signOutError,setSignOutError]=useState('');
   const [signingOut,setSigningOut]=useState(false);
@@ -144,7 +146,12 @@ function Workspace({session}:{session:Session}){
 
   function go(next:Page){
     setPage(next);setMenu(false);setSearch('');setFilter('');setDate('');setDetail(null);
+    setDirectorySiteId('');
     window.scrollTo(0,0);
+  }
+  function openMappedSite(id:string){
+    go('sites');
+    setDirectorySiteId(id);
   }
   function chooseSite(id:string){
     setSiteId(id);setDetail(null);setFilter('');setNow(Date.now());
@@ -258,7 +265,9 @@ function Workspace({session}:{session:Session}){
       {accessError&&<p className="error" role="alert">{accessError}</p>}
       {signOutError&&<p className="error" role="alert">{signOutError}</p>}
       {!access&&!accessError&&<p className="empty" role="status">Checking workspace access…</p>}
-      {access&&!sites.length&&page!=='settings'&&<Card title="No permitted sites"><p className="empty">Ask your administrator to verify your site assignments.</p></Card>}
+      {access&&!sites.length&&page!=='settings'&&page!=='sites'&&<Card title="No permitted sites"><p className="empty">Ask your administrator to verify your site assignments.</p></Card>}
+      {access&&page==='sites'&&<SitesWorkspace key={directorySiteId} initialSiteId={directorySiteId} isAdmin={access.profile.role==='admin'}
+        onSiteChange={()=>{setUserRefresh(value=>value+1);refresh();}}/>}
       {access&&page==='settings'&&<Card title="Profile" subtitle="Authenticated workspace account">
         <div className="settings-row"><div><strong>{access.profile.display_name}</strong><p>{session.user.email} · {label(access.profile.role)}</p></div><span className="avatar">{initials}</span></div>
         <div className="settings-row"><div><strong>Site access</strong><p>{sites.length?sites.map(s=>s.name).join(', '):'No permitted sites.'}</p></div></div>
@@ -268,7 +277,7 @@ function Workspace({session}:{session:Session}){
         {busy&&<span className="sr-only" role="status">Refreshing workspace records.</span>}
         {page==='overview'&&<>
           <Metrics items={[...dashboardMetrics]}/>
-          <OperationsMap sites={mapSites} incidentSites={incidentSites} onSelectSite={chooseSite}/>
+          <OperationsMap sites={mapSites} incidentSites={incidentSites} version={version} onSelectSite={chooseSite} onOpenSite={openMappedSite}/>
           <div className="grid">
             <Card title="Site coverage" subtitle="Confirmed guard presence by site" action={<button className="text-btn" onClick={()=>go('sites')}>View all sites <Icon name="arrow"/></button>}>
               {coverageRows()}
@@ -314,15 +323,10 @@ function Workspace({session}:{session:Session}){
               <button className="text-btn" onClick={()=>setDetail({kind:'handover',row})}>Open handover</button>,
             ]}))}/>}</Source>
         </Card>}
-        {page==='sites'&&<div className="listing sections"><Card title="Permitted sites" subtitle="Current duty presence · staffing targets are unavailable">
-          {coverageRows()}
-        </Card><Card title="Site shift assignments" subtitle="Read-only roster for the selected sites">
-          {filters([])}<Source resource={data.shifts}>{rows=>shiftTable(rows)}</Source>
-        </Card></div>}
         {page==='guards'&&<PersonnelWorkspace sites={sites} siteId={siteId} onSiteChange={chooseSite} onWorkspaceRefresh={refresh} onNames={mergePersonnelNames}/>}
         {page==='live'&&<div className="sections">
-          <OperationsMap sites={mapSites} incidentSites={incidentSites} onSelectSite={chooseSite}/>
-          <Card title="Live data availability"><p className="inline-note">The map uses authorized site records and urgent incidents from the latest refresh. Live guard locations, SOS alerts, geofences and patrol routes are awaiting implementation.</p></Card>
+          <OperationsMap sites={mapSites} incidentSites={incidentSites} version={version} onSelectSite={chooseSite} onOpenSite={openMappedSite}/>
+          <Card title="Map data"><p className="inline-note">Site centers, perimeters, and post points are configured in Sites. Guard duty status is shown separately from geographic positions.</p></Card>
         </div>}
         {page==='reports'&&<Card title="Occurrence book report" subtitle="Filter by event date, then print or save as PDF from your browser."
           action={<Button onClick={()=>go('occurrence')}>Open occurrence book</Button>}>

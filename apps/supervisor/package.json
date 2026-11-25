@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/incident-domain.test.mjs src/incident-security.test.mjs src/personnel-domain.test.mjs src/personnel-security.test.mjs"
+    "test": "tsx --test src/incident-domain.test.mjs src/incident-security.test.mjs src/personnel-domain.test.mjs src/personnel-security.test.mjs src/site-geography.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.75.0",

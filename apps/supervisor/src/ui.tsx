@@ -7,7 +7,7 @@ export const navigation = [
   ['guards','Guards','Guards & personnel','Review site-scoped identities, duty state and operational history.'],
   ['shifts','Shifts','Shifts & coverage','See scheduled assignments and confirmed check-ins.'],
   ['handovers','Handovers','Shift handovers','Review submitted handovers and incoming guard acknowledgement.'],
-  ['sites','Sites','Sites & assignments','View your permitted sites and their guard assignments.'],
+  ['sites','Sites','Sites & geography','Manage your authorized sites, perimeters and security posts.'],
   ['live','Live Operations','Live operations','View authorized sites and urgent incident indicators.'],
   ['analytics','Analytics','Operational analytics','Track incident activity for the selected site scope.'],
   ['reports','Reports','Reports','Open available operational reports.'],
